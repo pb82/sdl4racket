@@ -82,7 +82,7 @@
 		;; TODO:
 		;; Find out how to check for OS X on ppc.
 		;; Currently this assumes OS X running on x86 or x86-64.
-		((maxosx) 'LITTLE)))
+		((macosx) 'LITTLE)))
 
 ;; Get a valid (in terms of endianness) bitmask for use with SDL_Surface
 ;; creation.
