@@ -6,6 +6,7 @@
 	"src/sdl_image4racket.rkt"
 	"src/structs.rkt")
 
+;; Helper function
 (define (nth list index)
 	(define (iter l i)
 		(if (null? l)
