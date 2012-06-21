@@ -82,7 +82,7 @@
 		;; TODO:
 		;; Find out how to check for OS X on ppc.
 		;; Currently this assumes OS X running on x86 or x86-64.
-		((maxosx) 'LITTLE)))
+		((macosx) 'LITTLE)))
 
 ;; Get a valid (in terms of endianness) bitmask for use with SDL_Surface
 ;; creation.
@@ -377,16 +377,40 @@
 
 (define-sdl SDL_PeepEvents (_fun _pointer _int _uint8 _uint32 -> _int))
 (define (sdl-peep-events events action mask)
-	(let ((pointers (list->cvector (map (lambda (event) (event 'POINTER)) events) _sdl-event-pointer)))
+	(let ((pointers (list->cvector (map (lambda (event) (event 'POINTER)) events) _pointer)))
 		(SDL_PeepEvents (cvector-ptr pointers) (length events) action mask)))
 
+(define (sdl-mouse-motion-constructor event)
+	(let ((motion-event (ptr-ref event _sdl-mouse-motion-event)))
+		(lambda (msg)
+			(case msg
+				((WHICH) 	(sdl-mouse-motion-event-which	motion-event))
+				((STATE)	(sdl-mouse-motion-event-state motion-event))
+				((X) 			(sdl-mouse-motion-event-x 		motion-event))
+				((Y) 			(sdl-mouse-motion-event-y 		motion-event))
+				((XREL)		(sdl-mouse-motion-event-xrel	motion-event))
+				((YREL)		(sdl-mouse-motion-event-yrel	motion-event))
+				(else (error "Unknown message: " msg))))))
+
+(define (sdl-keyboard-constructor event)
+	(let ((keyboard-event (ptr-ref event _sdl-keyboard-event)))
+		(lambda (msg)
+			(case msg
+				((WHICH)		(sdl-keyboard-event-which		keyboard-event))
+				((STATE)		(sdl-keyboard-event-state		keyboard-event))
+				((KEYSYM)		(sdl-keyboard-event-keysym	keyboard-event))
+				(else (error "Unknown message: " msg))))))
+
 (define (sdl-make-event)
-	(let ((event (malloc _sdl-event)))
+	(let ((event (malloc 128)))
 		(begin
 			(cpointer-push-tag! event sdl-event-tag)
 			(lambda (msg)
-				(case msg
-					((TYPE) 'SDL-EVENT)
+				(case msg					
 					((POINTER) event)
-					((EVENT-TYPE) (sdl-event-type event))
+					((TYPE) (sdl-event-type event))
+					((EVENT) (case (sdl-event-type event)
+											((SDL_MOUSEMOTION) 	(sdl-mouse-motion-constructor event))
+											((SDL_KEYDOWN) 			(sdl-keyboard-constructor event))
+											((SDL_KEYUP) 				(sdl-keyboard-constructor event))))
 					(else (error "Unkown message:" msg)))))))
