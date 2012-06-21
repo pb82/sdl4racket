@@ -410,8 +410,8 @@
 	((type _uint8)
 	 (which _uint8)
 	 (ball _uint8)
-	 (xrel _uint8)
-	 (yrel _uint8)))
+	 (xrel _sint16)
+	 (yrel _sint16)))
 
 (define-cstruct _sdl-joy-hat-event
 	((type _uint8)
@@ -430,12 +430,6 @@
 	 (w _int)
 	 (h _int)))
 
-(define-cstruct _sdl-expose-event
-	((type _uint8)))
-
-(define-cstruct _sdl-quit-event
-	((type _uint8)))
-
 (define-cstruct _sdl-user-event
 	((type _uint8)
 	 (code _int)
@@ -447,22 +441,5 @@
 	((type _uint8)
 	 (msg _pointer)))
 
-(define _sdl-event-union
-	(_union		
-		_sdl-active-event
-		_sdl-keyboard-event
-		_sdl-mouse-motion-event
-		_sdl-mouse-button-event
-		_sdl-joy-axis-event
-		_sdl-joy-ball-event
-		_sdl-joy-hat-event
-		_sdl-joy-button-event
-		_sdl-resize-event
-		_sdl-expose-event
-		_sdl-quit-event
-		_sdl-user-event
-		_sdl-sys-wm-event))
-
 (define-cstruct _sdl-event
-	((type _sdl-event-type)
-	 (event _sdl-event-union)))
+	((type _sdl-event-type)))
