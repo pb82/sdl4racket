@@ -6,40 +6,44 @@
 	"src/sdl_image4racket.rkt"
 	"src/structs.rkt")
 
-(define (nth list index)
-	(define (iter l i)
-		(if (null? l)
-			(error "Index out of bounds: " index)
-			(cond ((= i index) (car l))
-						(#t (iter (cdr l) (+ i 1))))))
-	(iter list 0))
-	
+;; App State handling
+;; -----------------------------------------------------
+(define (app-state terminate)
+	(lambda (msg)
+		(case msg
+			((GET) terminate)
+			((SET) (lambda (state) (set! terminate state))))))
 
-(sdl-init '(SDL_INIT_VIDEO))
-(let ((screen (sdl-set-video-mode 320 240 32 '(SDL_SWSURFACE SDL_DOUBLEBUF)))
-			(image (sdl-display-format (img-load "logo.png")))
-			;;(image (sdl-display-format (sdl-load-bmp "test.bmp")))
-			(srect (make-sdl-rect 0 0 320 240))
-			(drect (make-sdl-rect 0 0 320 240)))
-	(begin 	(sdl-wm-set-caption "sdl4racket" "")
-					(printf "~a\n" (sdl-video-driver-name))
-					(printf "~a\n" (car (sdl-video-mode-ok 320 240 32 '(SDL_DOUBLEBUF SDL_SWSURFACE))))
-					(printf "Endianness: ~a\n" (sdl-get-endianness))
-					;;(printf "~a\n" (sdl-event-struct-type (sdl-wait-event)))
-					(sdl-blit-surface image srect screen drect)
-					(sdl-set-clip-rect image srect)
-					(let ((gamma-ramp (sdl-get-gamma-ramp)))
-						(sdl-set-gamma-ramp (nth gamma-ramp 0) (nth gamma-ramp 1) (nth gamma-ramp 2)))
-					(let ((rect (sdl-get-clip-rect image)))
-						(printf "~a\n" (sdl-rect-w rect)))
-				 	(sdl-flip screen)
-					(sdl-pump-events)
-					(display (sdl-peep-events (list (sdl-make-event) (sdl-make-event)) SDL_PEEKEVENT SDL_ALLEVENTS))
-					(sleep 2)
-					(sdl-fill-rect screen srect 27)
-					(sdl-flip screen)
-					(sdl-pump-events)
-				 	(sdl-free-surface image)))
-	
-(sleep 2)
-(sdl-quit)
+(define global-state (app-state #f))
+;; -----------------------------------------------------
+
+(define (init-sdl)
+	(begin
+		(sdl-init '(SDL_INIT_VIDEO))))
+
+(define (init-screen)
+	(let ((screen (sdl-set-video-mode 320 240 32 '(SDL_SWSURFACE SDL_DOUBLEBUF))))
+		screen))
+
+(define (main-loop screen)
+	(define (iter event)
+		(begin
+			(sdl-wait-event (event 'POINTER))
+
+			(let ((type (event 'TYPE)))
+				(case type
+					((SDL_QUIT) ((global-state 'SET) #t))
+					((SDL_MOUSEMOTION) (printf "x: ~a y: ~a \n" ((event 'EVENT) 'X) ((event 'EVENT) 'Y)))
+					(else (printf "unhandled type: ~a \n" type))))
+
+			(sdl-flip screen)
+
+			(if (eq? #f (global-state 'GET))
+				(iter event)
+				(sdl-quit))))
+	(begin
+		(let ((event (sdl-make-event)))
+			(iter event))))
+		
+(init-sdl)
+(main-loop (init-screen))
