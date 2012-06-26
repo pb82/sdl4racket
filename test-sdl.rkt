@@ -32,9 +32,12 @@
 
 			(let ((type (event 'TYPE)))
 				(case type
-					((SDL_QUIT) ((global-state 'SET) #t))
-					((SDL_MOUSEMOTION) (printf "x: ~a y: ~a \n" ((event 'EVENT) 'X) ((event 'EVENT) 'Y)))
-					(else (printf "unhandled type: ~a \n" type))))
+					((SDL_QUIT) 					((global-state 'SET) #t))
+					((SDL_MOUSEMOTION) 		(printf "x: ~a y: ~a \n" ((event 'EVENT) 'X) ((event 'EVENT) 'Y)))
+					((SDL_KEYDOWN) 				(printf "key: ~a\n" (((event 'EVENT) 'KEYSYM) 'SYM)))
+					((SDL_ACTIVEEVENT) 		(printf "gain: ~a\n" ((event 'EVENT) 'GAIN)))
+					((SDL_MOUSEBUTTONUP) 	(printf "button: ~a\n" ((event 'EVENT) 'BUTTON)))
+					(else 								(printf "unhandled type: ~a \n" type))))
 
 			(sdl-flip screen)
 
