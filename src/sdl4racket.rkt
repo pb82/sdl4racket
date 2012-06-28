@@ -7,46 +7,51 @@
   ffi/unsafe/cvector
   "./structs.rkt")
 
-;; Provided functions from libSDL
 (provide (all-defined-out))
 
 (define *flags* 
- '((SDL_INIT_TIMER #x00000001)
-   (SDL_INIT_AUDIO #x00000010)
-   (SDL_INIT_VIDEO #x00000020)
-   (SDL_INIT_CDROM #x00000100)
-   (SDL_INIT_JOYSTICK #x00000200)
-   (SDL_INIT_NOPARACHUTE #x00100000)
-   (SDL_INIT_EVENTTHREAD #x01000000)
-   (SDL_INIT_EVERYTHING #x0000FFFF)
+ '((SDL_INIT_TIMER        #x00000001)
+   (SDL_INIT_AUDIO        #x00000010)
+   (SDL_INIT_VIDEO        #x00000020)
+   (SDL_INIT_CDROM        #x00000100)
+   (SDL_INIT_JOYSTICK     #x00000200)
+   (SDL_INIT_NOPARACHUTE  #x00100000)
+   (SDL_INIT_EVENTTHREAD  #x01000000)
+   (SDL_INIT_EVERYTHING   #x0000FFFF)
    ;; Available for SDL_CreateRGBSurface or
    ;; SDL_SetVideoMode
-   (SDL_SWSURFACE #x00000000)
-   (SDL_HWSURFACE #x00000001)
-   (SDL_ASYNCBLIT #x00000004)
+   (SDL_SWSURFACE         #x00000000)
+   (SDL_HWSURFACE         #x00000001)
+   (SDL_ASYNCBLIT         #x00000004)
    ;; Avaibalbe for SDL_SetVideoMode
-   (SDL_ANYFORMAT #x10000000)
-   (SDL_HWPALETTE #x20000000)
-   (SDL_DOUBLEBUF #x40000000)
-   (SDL_FULLSCREEN #x80000000)
-   (SDL_OPENGL #x00000002)
-   (SDL_OPENGLBLIT #x0000000A)
-   (SDL_RESIZABLE #x00000010)
-   (SDL_NOFRAME #x00000020)
+   (SDL_ANYFORMAT         #x10000000)
+   (SDL_HWPALETTE         #x20000000)
+   (SDL_DOUBLEBUF         #x40000000)
+   (SDL_FULLSCREEN        #x80000000)
+   (SDL_OPENGL            #x00000002)
+   (SDL_OPENGLBLIT        #x0000000A)
+   (SDL_RESIZABLE         #x00000010)
+   (SDL_NOFRAME           #x00000020)
    ;; Used internally (read-only)
-   (SDL_HWACCEL #x00000100)
-   (SDL_SRCCOLORKEY #x00001000)
-   (SDL_RLEACCELOK #x00002000)
-   (SDL_SRCALPHA #x00010000)
-   (SDL_PREALLOC #x01000000)))
+   (SDL_HWACCEL           #x00000100)
+   (SDL_SRCCOLORKEY       #x00001000)
+   (SDL_RLEACCELOK        #x00002000)
+   (SDL_SRCALPHA          #x00010000)
+   (SDL_PREALLOC          #x01000000)))
 
 ;; SDL_GrabMode
 (define SDL_GRAB_QUERY -1)
-(define SDL_GRAB_OFF 0)
-(define SDL_GRAB_ON 1)
+(define SDL_GRAB_OFF    0)
+(define SDL_GRAB_ON     1)
+
+(define SDL_ADDEVENT 0)
+(define SDL_PEEKEVENT 1)
+(define SDL_GETEVENT 2)
+(define SDL_ALLEVENTS #xFFFFFFFF)
 
 ;; TODO: Find out on which OS this is running and load
 ;; the appropriate lib (libSDL.dll, libSDL.dylib)
+
 (define-ffi-definer define-sdl (ffi-lib "libSDL" #f))
 
 ;; merge-flags
@@ -58,7 +63,7 @@
 (define (assert condition value who)
   (if condition
     value
-    (error who "failed with ~a" value)))
+    (error who "failed with " value)))
 
 ;; Determine sytem byteorder
 ;; Thanks to http://serverfault.com/questions/163487/linux-how-to-tell-if-system-is-big-endian-or-little-endian
@@ -368,12 +373,6 @@
 (define-sdl SDL_PollEvent (_fun _sdl-event-pointer -> _int))
 (define (sdl-poll-event event)
   (SDL_PollEvent event))
-
-(define SDL_ADDEVENT 0)
-(define SDL_PEEKEVENT 1)
-(define SDL_GETEVENT 2)
-(define SDL_ALLEVENTS #xFFFFFFFF)
-
 
 (define-sdl SDL_PeepEvents (_fun _pointer _int _uint8 _uint32 -> _int))
 (define (sdl-peep-events events action mask)
