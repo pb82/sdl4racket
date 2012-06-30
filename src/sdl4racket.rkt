@@ -8,6 +8,8 @@
   "./structs.rkt")
 
 (provide (all-defined-out))
+(provide make-sdl-rect)
+(provide make-sdl-color)
 
 (define *flags* 
  '((SDL_INIT_TIMER        #x00000001)
@@ -49,10 +51,10 @@
 (define SDL_GETEVENT      2)
 (define SDL_ALLEVENTS     #xFFFFFFFF)
 
-;; TODO: Find out on which OS this is running and load
-;; the appropriate lib (libSDL.dll, libSDL.dylib)
 
-;; (define-ffi-definer define-sdl (ffi-lib "libSDL" #f))
+;; libSDL and libSDL_image initialization
+;; ---------------------------------------------------------------------
+
 (define (sdl-get-lib)
   (let ((type (system-type 'os)))
     (case type
@@ -73,19 +75,30 @@
 ;; entry point for all sorts of images. This can fail (if SDL_image
 ;; is not installed). But that's ok, it's an optional dependency.
 
-(define img-load (lambda (dummy) (error "img-load: SDL_image not available.")))
+;; Dummy img-load. If the library can't be loaded, the usage of
+;; the img-load wrapper throws an exception.
+(define img-load 
+  (lambda (dummy) (error "img-load: SDL_image not available.")))
 
-(with-handlers ((exn:fail? (lambda (ex) (printf "Failed to load optional dependency: SDL_image: ~a" ex))))
-  (begin
-    (define-ffi-definer define-img (ffi-lib (sdl-image-get-lib) #f))
-    (define-img IMG_Load (_fun _bytes -> _sdl-surface-pointer))
-    ;; If loading the library succeeded, replace the dummy function
-    ;; with the actual SDL_image export.
-    (set! img-load (lambda (path)
+;; Try to load SDL_image
+(with-handlers 
+  ((exn:fail? 
+    (lambda (ex) 
+      (printf "Failed to load optional dependency: SDL_image: ~a" ex))))      
+    (begin
+      (define-ffi-definer define-img (ffi-lib (sdl-image-get-lib) #f))
+      (define-img IMG_Load (_fun _bytes -> _sdl-surface-pointer))
+      ;; If loading the library succeeded, replace the dummy function
+      ;; with the actual SDL_image export.
+      (set! img-load (lambda (path)
       (IMG_Load (string->bytes/locale path))))))
-    
-;; merge-flags
-;; bitwise-or a list. Required for several sdl functions where flags are passed.
+;; ---------------------------------------------------------------------
+
+
+;; Helper functions
+;; ---------------------------------------------------------------------
+
+;; merge-flags: bitwise-or a list
 (define (merge-flags flags)
   (let ((vals (map (lambda (flag) (cadr (assoc flag *flags*))) flags)))
     (foldl (lambda (a b) (bitwise-ior a b)) 0 vals)))
@@ -95,32 +108,35 @@
     value
     (error who "failed with " value)))
 
-(define (sdl-make-rect x y w h)
-  (make-sdl-rect x y w h))
+(define-syntax-rule (handle-msg-error msg)
+  (error "Unknown message: " msg))
 
 ;; Determine sytem byteorder
-;; Thanks to http://serverfault.com/questions/163487/linux-how-to-tell-if-system-is-big-endian-or-little-endian
 ;;
 ;; Returns 'LITTLE on little endian systems (e.g. Linux on x86)
-;; or 'BIG on big endian systems (e.g. Linux on PowerPC)
-;;
-;; Throws exception if the endianness could not be determined.
+;; or 'BIG on big endian systems (e.g. Linux on PowerPC) Throws 
+;; if the endianness could not be determined.
 (define (sdl-get-endianness)
   (case (system-type 'os)
-    ((unix) (let ((out (process "echo -n I | od -to2 | head -n1 | cut -f2 -d' ' | cut -c6 ")))
-              (let ((result (read-line (car out))))
-                (begin
-                  (close-input-port (car out))
-                  (close-output-port (cadr out))
-                  (close-input-port (cadddr out)))
-                  (cond ((string=? result "1") 'LITTLE)
-                    ((string=? result "0") 'BIG)
-                    (else (error "Error determining system endianness"))))))
+    ((unix) 
+      ;; Thanks to 
+      ;; http://serverfault.com/questions/163487/...
+      ;; ...linux-how-to-tell-if-system-is-big-endian-or-little-endian
+      (let* ((out (process "echo -n I | od -to2 | head -n1 | cut -f2 -d' ' | cut -c6 "))
+             (result (read-line (car out))))
+        (begin
+          (close-input-port (car out))
+          (close-output-port (cadr out))
+          (close-input-port (cadddr out)))
+          (cond ((string=? result "1") 'LITTLE)
+            ((string=? result "0") 'BIG)
+            (else (error "Error determining system endianness")))))
+    ;; TODO: Windows on ARM?
     ((windows) 'LITTLE)
-    ;; TODO:
-    ;; Find out how to check for OS X on ppc.
-    ;; Currently this assumes OS X running on x86 or x86-64.
-    ((macosx) 'LITTLE)))
+    ;; TODO: OS X on ppc?
+    ((macosx) 'LITTLE)
+    (else (error "Error determining system endianness"))))
+
 
 ;; Get a valid (in terms of endianness) bitmask for use with SDL_Surface
 ;; creation.
@@ -137,177 +153,304 @@
           ((eqv? type 'A) #xFF000000)
           (else (error "Not a valid mask descriptor: " type)))))
 
-;; SDL_Init (flags) -> int
-(define-sdl SDL_Init (_fun _uint32 -> (r : _int) -> (assert (= r 0) r 'sdl-init)))
+
+;; SDL initialization and cleanup functions
+;; ---------------------------------------------------------------------
+
+;; sdl-init
+(define-sdl SDL_Init 
+  (_fun _uint32 
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-init)))
+    
 (define (sdl-init flags)
   (SDL_Init (merge-flags flags)))
 
-;; SDL_Quit
-(define-sdl SDL_Quit (_fun -> _void))
+;; sdl-quit
+(define-sdl SDL_Quit 
+  (_fun 
+    -> _void))
+  
 (define (sdl-quit)
   (SDL_Quit))
 
-;; SDL_GetError -> char*
-(define-sdl SDL_GetError (_fun -> _bytes))
+;; sdl-get-error
+(define-sdl SDL_GetError 
+  (_fun 
+    -> _bytes))
+    
 (define (sdl-get-error)
   (SDL_GetError))
+;; ---------------------------------------------------------------------
 
-;; <SDL Video>
-;; -----------
 
-;; SDL_GetVideoSurface (void)-> SDL_Surface*
-(define-sdl SDL_GetVideoSurface (_fun -> _sdl-surface-pointer))
+;; SDL video subsystem
+;; ---------------------------------------------------------------------
+
+;; sdl-get-video-surface
+(define-sdl SDL_GetVideoSurface 
+  (_fun 
+    -> _sdl-surface-pointer))
+    
 (define (sdl-get-video-surface)
   (SDL_GetVideoSurface))
 
-;; SDL_GetVideoInfo (void) SDL_VideoInfo*
-(define-sdl SDL_GetVideoInfo (_fun -> _sdl-video-info-pointer))
+;; sdl-get-video-info
+(define-sdl SDL_GetVideoInfo 
+  (_fun 
+    -> _sdl-video-info-pointer))
+    
 (define (sdl-get-video-info)
   (SDL_GetVideoInfo))
 
-;; SDL_GetVideoDriverName (char *buffer, int maxlen)
-(define-sdl SDL_VideoDriverName (_fun _bytes _int -> _pointer))
+;; sdl-video-driver-name
+(define-sdl SDL_VideoDriverName 
+  (_fun _bytes _int 
+    -> _pointer))
+    
 (define (sdl-video-driver-name)
-  (let ((buffer (make-bytes 12)))
-    (begin
-      (let ((p (SDL_VideoDriverName buffer 12)))
-        (if (ptr-equal? p #f)
-          (error "Failed to get video driver name. Have you called sdl-init?")
-          (make-sized-byte-string buffer 12))))))
+  (let* ((buffer (make-bytes 12))
+         (p (SDL_VideoDriverName buffer 12)))
+      (if (not (ptr-equal? p #f))
+        (make-sized-byte-string buffer 12)
+        (error "Failed to get video driver name. sdl initialized?"))))
 
-;; TODO
+
+;; TODO: 
+;; MISSING:
 ;; SDL_ListModes
 
-;; SDL_VideoModeOK (width, height, bpp, flags) -> (ok?, bpp)
-(define-sdl SDL_VideoModeOK (_fun _int _int _int _uint32 -> _int))
+;; sdl-video-mode-ok
+(define-sdl SDL_VideoModeOK 
+  (_fun _int _int _int _uint32 
+    -> _int))
+    
 (define (sdl-video-mode-ok width height bpp flags)
   (let ((bpp (SDL_VideoModeOK width height bpp (merge-flags flags))))
     (cons (> bpp 0) bpp)))
 
-;; SDL_UpdateRects
+;; sdl-update-rects
 (define (sdl-update-rects screen rects)
   (define (iter item list)
     (if (null? list)
-      (SDL_UpdateRect screen (sdl-rect-x item) (sdl-rect-y item) (sdl-rect-w item) (sdl-rect-h item))
+      (SDL_UpdateRect screen 
+        (sdl-rect-x item) 
+        (sdl-rect-y item) 
+        (sdl-rect-w item) 
+        (sdl-rect-h item))
       (iter (car list) (cdr list))))
   (iter (car rects) (cdr rects)))
         
-;; SDL_SetColors (SDL_Surface*, SDL_Color *, int firstcolor, intncolors)
-(define-sdl SDL_SetColors (_fun _sdl-surface-pointer _pointer _int _int -> _int))
-(define (sdl-set-colors surface color-list)
-  (let ((vector (list->cvector color-list _sdl-color-pointer)))
-    (SDL_SetColors surface (cvector-ptr vector) 0 (length color-list))))
+;; sdl-set-colors
+(define-sdl SDL_SetColors 
+  (_fun _sdl-surface-pointer _pointer _int _int 
+    -> _int))
+    
+(define (sdl-set-colors surface colors)
+  (let ((vector (list->cvector colors _sdl-color-pointer)))
+    (SDL_SetColors surface (cvector-ptr vector) 0 (length colors))))
 
-;; SDL_SetPalette (SDL_Surface*, int flags, SDL_Color*, int first, int n)
-(define-sdl SDL_SetPalette (_fun _sdl-surface-pointer _int _pointer _int _int -> _int))
-(define (sdl-set-palette surface flags color-list)
+;; sdl-set-palette
+(define-sdl SDL_SetPalette 
+  (_fun _sdl-surface-pointer _int _pointer _int _int 
+    -> _int))
+    
+(define (sdl-set-palette surface flags colors)
   (let ((flags-value (merge-flags flags))
-        (vector (list->cvector color-list _sdl-color-pointer)))
-    (SDL_SetPalette surface flags-value (cvector-ptr vector) 0 (length color-list))))
+        (vector (list->cvector colors _sdl-color-pointer)))
+    (SDL_SetPalette 
+      surface 
+      flags-value 
+      (cvector-ptr vector) 
+      0 
+      (length colors))))
 
-;; SDL_SetGamma (float,float,float) -> int
-(define-sdl SDL_SetGamma (_fun _float _float _float -> (r : _int) -> (assert (>= r 0) r 'sdl-set-gamma)))
+;; sdl-set-gamma
+(define-sdl SDL_SetGamma 
+  (_fun _float _float _float 
+    -> (r : _int) 
+    -> (assert (>= r 0) r 'sdl-set-gamma)))
+    
 (define (sdl-set-gamma r g b)
   (SDL_SetGamma r g b))
 
-;; SDL_GetGammaRamp (Uint16*, Uint16*, Uint16*) -> int
-;; 
-;; Returns a list of three lists. Each of the nested lists has a length
+;; sdl-set-gamma-ramp
+;; returns a list of three lists. Each of the nested lists has a length
 ;; of 256 and contains the tables for red, green and blue.
-;;
 ;; Throws exception on error.
-(define-sdl SDL_GetGammaRamp (_fun _pointer _pointer _pointer -> (r : _int) -> (assert (>= r 0) r 'sdl-get-gamma-ramp)))
+(define-sdl SDL_GetGammaRamp 
+  (_fun _pointer _pointer _pointer 
+    -> (r : _int) 
+    -> (assert (>= r 0) r 'sdl-get-gamma-ramp)))
+    
 (define (sdl-get-gamma-ramp)
   (let ((r (make-cvector _uint16 256))
         (g (make-cvector _uint16 256))
         (b (make-cvector _uint16 256)))
     (begin
-      (assert (>= 0 (SDL_GetGammaRamp (cvector-ptr r) (cvector-ptr g) (cvector-ptr b))) 0 'sdl-get-gamma-ramp)
+      (assert 
+        (>= 0 
+          (SDL_GetGammaRamp 
+            (cvector-ptr r) 
+            (cvector-ptr g) 
+            (cvector-ptr b))) 0 'sdl-get-gamma-ramp)
       (list (cvector->list r) (cvector->list g) (cvector->list b)))))
 
-;; SDL_SetGammaRamp (uint16*, uint16*, uint16*) -> int
-(define-sdl SDL_SetGammaRamp (_fun _pointer _pointer _pointer -> (r : _int) -> (assert (>= 0 r) r 'sdl-set-gamma-ramp)))
+;; set-gamma-ramp
+(define-sdl SDL_SetGammaRamp 
+  (_fun _pointer _pointer _pointer 
+    -> (r : _int) 
+    -> (assert (>= r 0) r 'sdl-set-gamma-ramp)))
+    
 (define (sdl-set-gamma-ramp r g b)
   (let ((rvector (list->cvector r _uint16))
         (gvector (list->cvector g _uint16))
         (bvector (list->cvector b _uint16)))
-    (SDL_SetGammaRamp (cvector-ptr rvector) (cvector-ptr gvector) (cvector-ptr bvector))))
+    (SDL_SetGammaRamp 
+      (cvector-ptr rvector) 
+      (cvector-ptr gvector) 
+      (cvector-ptr bvector))))
 
 ;; TODO:
-;;
+;; MISSING:
 ;; SDL_MapRGB
 ;; SDL_MapRGBA
 ;; SDL_GetRGB
 ;; SDL_GetRGBA
 
-;; SDL_CreateRGBSurface (flags, width, height, bpp, rmas, gmask, bmask, amask) -> SDL_Surface*
-(define-sdl SDL_CreateRGBSurface (_fun _uint32 _int _int _int _uint32 _uint32 _uint32 _uint32 -> _sdl-surface-pointer))
-(define (sdl-create-rgb-surface flags width height bpp rmask gmask bmask)
-  (SDL_CreateRGBSurface (merge-flags flags) width height bpp rmask gmask bmask))
+;; sdl-create-rgb-surface
+(define-sdl SDL_CreateRGBSurface 
+  (_fun _uint32 _int _int _int _uint32 _uint32 _uint32 _uint32
+    -> _sdl-surface-pointer))
+    
+(define (sdl-create-rgb-surface flags w h bpp rmask gmask bmask amask)
+  (SDL_CreateRGBSurface 
+    (merge-flags flags) 
+    w 
+    h 
+    bpp 
+    rmask 
+    gmask 
+    bmask 
+    amask))
 
-;; SDL_CreateRGBSurfaceFrom (void*, int, int, int, int, uint32, uint32, uint32, uint32)
-(define-sdl SDL_CreateRGBSurfaceFrom (_fun _pointer _int _int _int _int _uint32 _uint32 _uint32 _uint32 -> _sdl-surface-pointer))
-(define (sdl-create-rgb-surface-from pixels width height depth pitch rmask gmask bmask amask)
-  (SDL_CreateRGBSurfaceFrom pixels width height depth pitch rmask gmask bmask amask))
+;; sdl-create-rgb-surface-from
+(define-sdl SDL_CreateRGBSurfaceFrom 
+  (_fun _pointer _int _int _int _int _uint32 _uint32 _uint32 _uint32 
+    -> _sdl-surface-pointer))
+    
+(define (sdl-create-rgb-surface-from pixels w h depth pitch rmask gmask bmask amask)
+  (SDL_CreateRGBSurfaceFrom 
+    pixels 
+    w 
+    h 
+    depth 
+    pitch 
+    rmask 
+    gmask 
+    bmask 
+    amask))
 
-;; SDL_LockSurface (SDL_Surface*) -> int
-(define-sdl SDL_LockSurface (_fun _sdl-surface-pointer -> (r : _int) -> (assert (= r 0) r 'sdl-lock-surface)))
+;; sdl-lock-surface
+(define-sdl SDL_LockSurface 
+  (_fun _sdl-surface-pointer 
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-lock-surface)))
+    
 (define (sdl-lock-surface surface)
   (SDL_LockSurface surface))
 
-;; SDL_UnlockSurface (SDL_Surface*) -> void
-(define-sdl SDL_UnlockSurface (_fun _sdl-surface-pointer -> _void))
+;; sdl-unlock-surface
+(define-sdl SDL_UnlockSurface 
+  (_fun _sdl-surface-pointer 
+    -> _void))
+    
 (define (sdl-unlock-surface surface)
   (SDL_UnlockSurface surface))
 
-;; SDL_ConvertSurface (SDL_Surface*, SDL_PixelFormat*, uint32) -> SDL_Surface*
-(define-sdl SDL_ConvertSurface (_fun _sdl-surface-pointer _sdl-pixel-format-pointer _uint32 -> _sdl-surface-pointer))
+;; sdl-convert-surface
+(define-sdl SDL_ConvertSurface 
+  (_fun _sdl-surface-pointer _sdl-pixel-format-pointer _uint32 
+    -> _sdl-surface-pointer))
+    
 (define (sdl-convert-surface source format flags)
   (SDL_ConvertSurface source format (merge-flags flags)))
 
-(define-sdl SDL_RWFromFile (_fun _bytes _bytes -> _pointer))
+;; sdl-rw-from-file
+(define-sdl SDL_RWFromFile 
+  (_fun _bytes _bytes 
+    -> _pointer))
+    
 (define (sdl-rw-from-file path mode)
-  (SDL_RWFromFile (string->bytes/locale path) (string->bytes/locale mode)))
+  (SDL_RWFromFile 
+    (string->bytes/locale path) 
+    (string->bytes/locale mode)))
 
-;; SDL_LoadBMP (a macro to SDL_LoadBMP_RW) (const char*) -> SDL_Surface*
-(define-sdl SDL_LoadBMP_RW (_fun _pointer _int -> _sdl-surface-pointer))
+;; sdl-load-bmp
+(define-sdl SDL_LoadBMP_RW 
+  (_fun _pointer _int 
+    -> _sdl-surface-pointer))
+    
 (define (sdl-load-bmp path)
   (SDL_LoadBMP_RW (sdl-rw-from-file path "r") 1))
 
-;; SDL_SaveBMP (a macro to SDL_SaveBMP_RW) (SDL_Surface*, const char*) -> int
-(define-sdl SDL_SaveBMP_RW (_fun _sdl-surface-pointer _pointer _int -> (r : _int) -> (assert (= 0 r) r 'sdl-save-bmp)))
+;; sdl-save-bmp
+(define-sdl SDL_SaveBMP_RW 
+  (_fun _sdl-surface-pointer _pointer _int 
+    -> (r : _int) 
+    -> (assert (= 0 r) r 'sdl-save-bmp)))
+    
 (define (sdl-save-bmp surface path)
   (SDL_SaveBMP_RW surface (sdl-rw-from-file path "wb") 1))
 
-;; SDL_SetColorKey (SDL_Surface*, uint32, uint32) -> int
-(define-sdl SDL_SetColorKey (_fun _sdl-surface-pointer _uint32 _uint32 -> (r : _int) -> (assert (= 0 r) r 'sdl-set-color-key)))
+;; sdl-set-color-key
+(define-sdl SDL_SetColorKey 
+  (_fun _sdl-surface-pointer _uint32 _uint32 
+    -> (r : _int) 
+    -> (assert (= 0 r) r 'sdl-set-color-key)))
+    
 (define (sdl-set-color-key surface flag key)
   (SDL_SetColorKey surface (merge-flags flag) key))
 
-;; SDL_SetAlpha (SDL_Surface*, uint32, uint8) -> int
-(define-sdl SDL_SetAlpha (_fun _sdl-surface-pointer _uint32 _uint8 -> (r : _int) -> (assert (= 0 r) r 'sdl-set-alpha)))
+;; sdl-set-aplhp
+(define-sdl SDL_SetAlpha 
+  (_fun _sdl-surface-pointer _uint32 _uint8 
+    -> (r : _int) 
+    -> (assert (= 0 r) r 'sdl-set-alpha)))
+    
 (define (sdl-set-alpha surface flags alpha)
   (SDL_SetAlpha surface (merge-flags flags) alpha))
 
-;; SDL_SetClipRect (SDL_Surface*, SDL_Rect*) -> void
-(define-sdl SDL_SetClipRect (_fun _sdl-surface-pointer _sdl-rect-pointer -> _void))
+;; sdl-set-clip-rect
+(define-sdl SDL_SetClipRect 
+  (_fun _sdl-surface-pointer _sdl-rect-pointer 
+    -> _void))
+    
 (define (sdl-set-clip-rect surface rect)
   (SDL_SetClipRect surface rect))
 
-;; SDL_GetClipRect (SDL_Surface*, SDL_Rect*) -> void
-(define-sdl SDL_GetClipRect (_fun _sdl-surface-pointer _sdl-rect-pointer -> _void))
+;; sdl-get-clip-rect
+(define-sdl SDL_GetClipRect 
+  (_fun _sdl-surface-pointer _sdl-rect-pointer 
+    -> _void))
+    
 (define (sdl-get-clip-rect surface)
   (let ((rect (make-sdl-rect 0 0 0 0)))
     (begin
       (SDL_GetClipRect surface rect)
       rect)))
 
-;; SDL_FillRect (SDL_Surface*, SDL_Rect*) -> int
-(define-sdl SDL_FillRect (_fun _sdl-surface-pointer _sdl-rect-pointer _uint32 -> (r : _int) -> (assert (= r 0) r 'sdl-fill-rect)))
+;; sdl-fill-rect
+(define-sdl SDL_FillRect 
+  (_fun _sdl-surface-pointer _sdl-rect-pointer _uint32 
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-fill-rect)))
+    
 (define (sdl-fill-rect surface rect color)
   (SDL_FillRect surface rect color))
 
-;; TODO
+;; TODO:
+;; MISSING:
 ;; SDL_LoadLibrary (?)
 ;; SDL_GetProcAddress (?)
 ;; SDL_GetAttribute
@@ -319,101 +462,169 @@
 ;; SDL_DisplayYUVOverlay
 ;; SDL_FreeYUVOverlay
 
-;; SDL_SetVideoMode (width, height, bpp, flags) -> SDL_Surface*
-(define-sdl SDL_SetVideoMode (_fun _int _int _int _uint32 -> _sdl-surface-pointer))
+;; sdl-set-video-mode
+(define-sdl SDL_SetVideoMode 
+  (_fun _int _int _int _uint32 
+    -> _sdl-surface-pointer))
+    
 (define (sdl-set-video-mode width height bpp flags)
   (SDL_SetVideoMode width height bpp (merge-flags flags)))
 
-;; SDL_BlitSurface (source, source_rect, dest, dest_rect) -> int
-(define-sdl SDL_UpperBlit (_fun _sdl-surface-pointer _sdl-rect-pointer _sdl-surface-pointer _sdl-rect-pointer -> (r : _int) -> (assert (= r 0) r 'sdl-blit-surface)))
+;; sdl.blit-surface
+(define-sdl SDL_UpperBlit 
+  (_fun 
+    _sdl-surface-pointer 
+    _sdl-rect-pointer 
+    _sdl-surface-pointer 
+    _sdl-rect-pointer 
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-blit-surface)))
+    
 (define (sdl-blit-surface s srect d drect)
   (SDL_UpperBlit s srect d drect))
 
-;; SDL_UpdateRect (screen, x, y, w, h)
-(define-sdl SDL_UpdateRect (_fun _sdl-surface-pointer _sint32 _sint32 _sint32 _sint32 -> _void))
+;; sdl-update-rect
+(define-sdl SDL_UpdateRect 
+  (_fun _sdl-surface-pointer _sint32 _sint32 _sint32 _sint32 
+    -> _void))
+    
 (define (sdl-update-rect screen x y w h)
   (SDL_UpdateRect screen x y w h))
 
-;; SDL_FreeSurface (surface)
-(define-sdl SDL_FreeSurface (_fun _sdl-surface-pointer -> _void))
+;; sdl-free-surface
+(define-sdl SDL_FreeSurface 
+  (_fun _sdl-surface-pointer 
+    -> _void))
+    
 (define (sdl-free-surface surface)
   (SDL_FreeSurface surface))
 
-;; SDL_Flip (surface)
-(define-sdl SDL_Flip (_fun _sdl-surface-pointer -> _void))
+;; sdl-flip
+(define-sdl SDL_Flip 
+  (_fun _sdl-surface-pointer 
+    -> _void))
+    
 (define (sdl-flip surface)
   (SDL_Flip surface))
 
-;; SDL_DisplayFormat
-(define-sdl SDL_DisplayFormat (_fun _sdl-surface-pointer -> _sdl-surface-pointer))
+;; sdl-display-format
+(define-sdl SDL_DisplayFormat 
+  (_fun _sdl-surface-pointer 
+    -> _sdl-surface-pointer))
+    
 (define (sdl-display-format surface)
   (SDL_DisplayFormat surface))
 
-;; SDL_DisplayFormatAlpha (SDL_Surface*) -> SDL_Surface*
-(define-sdl SDL_DisplayFormatAlpha (_fun _sdl-surface-pointer -> _sdl-surface-pointer))
+;; sdl-display-format-alpha
+(define-sdl SDL_DisplayFormatAlpha 
+  (_fun _sdl-surface-pointer 
+    -> _sdl-surface-pointer))
+    
 (define (sdl-display-format-alpha surface)
   (SDL_DisplayFormatAlpha surface))
+;; ---------------------------------------------------------------------
 
-;; </SDL Video>
-;; ------------
 
-;; <SDL Window Management>
-;; -----------------------
+;; SDL window management
+;; ---------------------------------------------------------------------
 
 ;; SDL_WM_SetCaption
-(define-sdl SDL_WM_SetCaption (_fun _bytes _bytes -> _void))
+(define-sdl SDL_WM_SetCaption 
+  (_fun _bytes _bytes 
+    -> _void))
+    
 (define (sdl-wm-set-caption title icon)
-  (SDL_WM_SetCaption (string->bytes/locale title) (string->bytes/locale icon)))
+  (SDL_WM_SetCaption 
+    (string->bytes/locale title) 
+    (string->bytes/locale icon)))
 
-;; TODO
+;; TODO:
+;; MISSING:
 ;; SDL_GetWMCaption
 ;; SDL_GetWMInfo
 
-;; SDL_WM_SetCaption (SDL_Surface*, uint8) -> void
-(define-sdl SDL_WM_SetIcon (_fun _sdl-surface-pointer _uint8 -> _void))
+;; sdl-wm-set-icon
+(define-sdl SDL_WM_SetIcon 
+  (_fun _sdl-surface-pointer _uint8 
+    -> _void))
+    
 (define (sdl-wm-set-icon surface mask)
   (SDL_WM_SetIcon surface mask))
 
-;; SDL_WM_IconifyWindow (void) -> int
-(define-sdl SDL_WM_IconifyWindow (_fun -> _int))
+;; sdl-wm-iconify-window
+(define-sdl SDL_WM_IconifyWindow 
+  (_fun 
+    -> _int))
+    
 (define (sdl-wm-iconify-window)
   (SDL_WM_IconifyWindow))
 
-;; SDL_WM_ToggleFullScreen (SDL_Surface*) -> int
-(define-sdl SDL_WM_ToggleFullScreen (_fun _sdl-surface-pointer -> _int))
+;; sdl-toggle-fullscreen
+(define-sdl SDL_WM_ToggleFullScreen 
+  (_fun _sdl-surface-pointer 
+    -> _int))
+    
 (define (sdl-wm-toggle-fullscreen surface)
   (SDL_WM_ToggleFullScreen surface))
 
-(define-sdl SDL_WM_GrabInput (_fun _int -> _int))
+;; sdl-wm-grab-input
+(define-sdl SDL_WM_GrabInput 
+  (_fun _int 
+    -> _int))
+    
 (define (sdl-wm-grab-input mode)
   (SDL_WM_GrabInput mode))
+;; ---------------------------------------------------------------------
 
-;; </SDL Window Management>
-;; ------------------------
+;; SDL events
+;; ---------------------------------------------------------------------
 
-;; <SDL Events>
-;; ------------
-
-;; SDL_PumpEvents(void) -> void
-(define-sdl SDL_PumpEvents (_fun -> _void))
+;; sdl-pump-events
+(define-sdl SDL_PumpEvents 
+  (_fun 
+    -> _void))
+    
 (define (sdl-pump-events)
   (SDL_PumpEvents))
 
-(define-sdl SDL_WaitEvent (_fun _sdl-event-pointer -> (r : _int) -> (assert (= 1 r) r 'sdl-wait-events)))
+;; sdl-wait-event
+(define-sdl SDL_WaitEvent 
+  (_fun _sdl-event-pointer 
+    -> (r : _int) 
+    -> (assert (= 1 r) r 'sdl-wait-events)))
+    
 (define (sdl-wait-event event)
   (SDL_WaitEvent event))
 
-(define-sdl SDL_PollEvent (_fun _sdl-event-pointer -> _int))
+;; sdl-poll-event
+(define-sdl SDL_PollEvent 
+  (_fun _sdl-event-pointer 
+    -> _int))
+    
 (define (sdl-poll-event event)
   (SDL_PollEvent event))
 
-(define-sdl SDL_PeepEvents (_fun _pointer _int _uint8 _uint32 -> _int))
+;; sdl-peep-events
+(define-sdl SDL_PeepEvents 
+  (_fun _pointer _int _uint8 _uint32 
+    -> (r : _int)
+    -> (assert (>= r 0) r 'sdl-wait-events)))
+    
 (define (sdl-peep-events events action mask)
-  (let ((pointers (list->cvector (map (lambda (event) (event 'POINTER)) events) _pointer)))
-    (SDL_PeepEvents (cvector-ptr pointers) (length events) action mask)))
+  (let ((pointers 
+          (list->cvector 
+            (map (lambda (event) (event 'POINTER)) events) _pointer)))
+      
+    (SDL_PeepEvents 
+      (cvector-ptr pointers) 
+      (length events) 
+      action 
+      mask)))
 
-(define-syntax-rule (handle-msg-error msg)
-  (error "Unknown message: " msg))
+;; SDL event structures are converted to function closures.
+;; There is a constructor function for every event type, that
+;; returns another function which takes a symbol (message) with
+;; the name of the desired property.
 
 (define (sdl-active-constructor raw-pointer type)
   (let ((event (ptr-ref raw-pointer _sdl-active-event)))
@@ -538,19 +749,20 @@
         (case msg         
           ((POINTER) event)
           ((TYPE) (sdl-event-type event))
-          ((EVENT) (case (sdl-event-type event)
-                      ((SDL_ACTIVEEVENT)      (sdl-active-constructor       event 'SDL_ACTIVEEVENT))
-                      ((SDL_MOUSEMOTION)      (sdl-mouse-motion-constructor event 'SDL_MOUSEMOTION))
-                      ((SDL_KEYDOWN)          (sdl-keyboard-constructor     event 'SDL_KEYDOWN))
-                      ((SDL_KEYUP)            (sdl-keyboard-constructor     event 'SDL_KEYUP))
-                      ((SDL_MOUSEBUTTONDOWN)  (sdl-mouse-button-constructor event 'SDL_MOUSEBUTTONDOWN))
-                      ((SDL_MOUSEBUTTONUP)    (sdl-mouse-button-constructor event 'SDL_MOUSEBUTTONUP))
-                      ((SDL_JOYAXISMOTION)    (sdl-joy-axis-constructor     event 'SDL_JOYAXISMOTION))
-                      ((SDL_JOYBALLMOTION)    (sdl-joy-ball-constructor     event 'SDL_JOYBALLMOTION))
-                      ((SDL_JOYHATMOTION)     (sdl-joy-hat-constructor      event 'SDL_JOYHATMOTION))
-                      ((SDL_JOYBUTTONDOWN)    (sdl-joy-button-constructor   event 'SDL_JOYBUTTONDOWN))
-                      ((SDL_JOYBUTTONUP)      (sdl-joy-button-constructor   event 'SDL_JOYBUTTONUP))
-                      ((SDL_VIDEORESIZE)      (sdl-resize-constructor       event 'SDL_VIDEORESIZE))
-                      ((SDL_VIDEOEXPOSE)      (sdl-expose-constructor             'SDL_VIDEOEXPOSE))
-                      ((SDL_QUIT)             (sdl-quit-constructor               'SDL_QUIT))
-                      (else (error "Unkown event type:" msg)))))))))
+          ((EVENT) 
+            (case (sdl-event-type event)
+              ((SDL_ACTIVEEVENT)      (sdl-active-constructor       event 'SDL_ACTIVEEVENT))
+              ((SDL_MOUSEMOTION)      (sdl-mouse-motion-constructor event 'SDL_MOUSEMOTION))
+              ((SDL_KEYDOWN)          (sdl-keyboard-constructor     event 'SDL_KEYDOWN))
+              ((SDL_KEYUP)            (sdl-keyboard-constructor     event 'SDL_KEYUP))
+              ((SDL_MOUSEBUTTONDOWN)  (sdl-mouse-button-constructor event 'SDL_MOUSEBUTTONDOWN))
+              ((SDL_MOUSEBUTTONUP)    (sdl-mouse-button-constructor event 'SDL_MOUSEBUTTONUP))
+              ((SDL_JOYAXISMOTION)    (sdl-joy-axis-constructor     event 'SDL_JOYAXISMOTION))
+              ((SDL_JOYBALLMOTION)    (sdl-joy-ball-constructor     event 'SDL_JOYBALLMOTION))
+              ((SDL_JOYHATMOTION)     (sdl-joy-hat-constructor      event 'SDL_JOYHATMOTION))
+              ((SDL_JOYBUTTONDOWN)    (sdl-joy-button-constructor   event 'SDL_JOYBUTTONDOWN))
+              ((SDL_JOYBUTTONUP)      (sdl-joy-button-constructor   event 'SDL_JOYBUTTONUP))
+              ((SDL_VIDEORESIZE)      (sdl-resize-constructor       event 'SDL_VIDEORESIZE))
+              ((SDL_VIDEOEXPOSE)      (sdl-expose-constructor             'SDL_VIDEOEXPOSE))
+              ((SDL_QUIT)             (sdl-quit-constructor               'SDL_QUIT))
+              (else                   (error "Unkown event type:" msg)))))))))

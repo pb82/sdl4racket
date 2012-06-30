@@ -2,7 +2,9 @@
 #lang racket
 
 (require  
-  "src/sdl4racket.rkt")
+  "../src/sdl4racket.rkt")
+
+;; Initialization, surfaces and simple event handling.
 
 ;; App State handling
 ;; -----------------------------------------------------
@@ -15,15 +17,15 @@
 (define global-state (app-state #f))
 ;; -----------------------------------------------------
 
-(define (init-sdl)
-  (begin
-    (sdl-init '(SDL_INIT_VIDEO))))
+(define (init-sdl) (sdl-init '(SDL_INIT_VIDEO)))
 
 (define (init-screen)
-  (let ((screen (sdl-set-video-mode 640 480 32 '(SDL_SWSURFACE SDL_DOUBLEBUF)))
-        (logo   (sdl-display-format (img-load "logo.png")))
-        (srect  (sdl-make-rect 0 0 320 240))
-        (drect  (sdl-make-rect 160 120 320 240)))
+  (let
+    ((screen (sdl-set-video-mode 640 480 32 '(SDL_SWSURFACE SDL_DOUBLEBUF)))
+     (logo   (sdl-display-format (img-load "logo.png")))
+     (srect  (make-sdl-rect 0 0 320 240))
+     (drect  (make-sdl-rect 160 120 320 240)))
+     
     (begin
       (sdl-blit-surface logo srect screen drect)
       (sdl-flip screen)
@@ -36,10 +38,17 @@
 
       (let ((type (event 'TYPE)))
         (case type
-          ((SDL_QUIT)           ((global-state 'SET) #t))
-          ((SDL_MOUSEMOTION)    (printf "x: ~a y: ~a \n" ((event 'EVENT) 'X) ((event 'EVENT) 'Y)))))
-          
-      (sdl-flip screen)
+        
+          ((SDL_QUIT)
+            ((global-state 'SET) #t))
+            
+          ((SDL_MOUSEMOTION)
+            (printf "x: ~a y: ~a \n" 
+              ((event 'EVENT) 'X) 
+              ((event 'EVENT) 'Y)))
+              
+          (else
+            (printf "unhandled event: ~a\n" type))))
 
       (if (eq? #f (global-state 'GET))
         (iter event)
