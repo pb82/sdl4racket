@@ -40,22 +40,52 @@
    (SDL_PREALLOC          #x01000000)))
 
 ;; SDL_GrabMode
-(define SDL_GRAB_QUERY -1)
-(define SDL_GRAB_OFF    0)
-(define SDL_GRAB_ON     1)
+(define SDL_GRAB_QUERY    -1)
+(define SDL_GRAB_OFF      0)
+(define SDL_GRAB_ON       1)
 
-(define SDL_ADDEVENT 0)
-(define SDL_PEEKEVENT 1)
-(define SDL_GETEVENT 2)
-(define SDL_ALLEVENTS #xFFFFFFFF)
+(define SDL_ADDEVENT      0)
+(define SDL_PEEKEVENT     1)
+(define SDL_GETEVENT      2)
+(define SDL_ALLEVENTS     #xFFFFFFFF)
 
 ;; TODO: Find out on which OS this is running and load
 ;; the appropriate lib (libSDL.dll, libSDL.dylib)
 
-(define-ffi-definer define-sdl (ffi-lib "libSDL" #f))
+;; (define-ffi-definer define-sdl (ffi-lib "libSDL" #f))
+(define (sdl-get-lib)
+  (let ((type (system-type 'os)))
+    (case type
+      ((unix)     "libSDL")
+      ((windows)  "SDL")
+      (else (error "Platform not supported: " type)))))
 
+(define (sdl-image-get-lib)
+  (let ((type (system-type 'os)))
+    (case type
+      ((unix)     "libSDL_image")
+      ((windows)  "libSDL_image")
+      (else (error "Platform not supported: " type)))))
+
+(define-ffi-definer define-sdl (ffi-lib (sdl-get-lib) #f))
+
+;; Try to load the SDL_image lib and provide IMG_load, the generic
+;; entry point for all sorts of images. This can fail (if SDL_image
+;; is not installed). But that's ok, it's an optional dependency.
+
+(define img-load (lambda (dummy) (error "img-load: SDL_image not available.")))
+
+(with-handlers ((exn:fail? (lambda (ex) (printf "Failed to load optional dependency: SDL_image: ~a" ex))))
+  (begin
+    (define-ffi-definer define-img (ffi-lib (sdl-image-get-lib) #f))
+    (define-img IMG_Load (_fun _bytes -> _sdl-surface-pointer))
+    ;; If loading the library succeeded, replace the dummy function
+    ;; with the actual SDL_image export.
+    (set! img-load (lambda (path)
+      (IMG_Load (string->bytes/locale path))))))
+    
 ;; merge-flags
-;; bitwise-or a list
+;; bitwise-or a list. Required for several sdl functions where flags are passed.
 (define (merge-flags flags)
   (let ((vals (map (lambda (flag) (cadr (assoc flag *flags*))) flags)))
     (foldl (lambda (a b) (bitwise-ior a b)) 0 vals)))
@@ -64,6 +94,9 @@
   (if condition
     value
     (error who "failed with " value)))
+
+(define (sdl-make-rect x y w h)
+  (make-sdl-rect x y w h))
 
 ;; Determine sytem byteorder
 ;; Thanks to http://serverfault.com/questions/163487/linux-how-to-tell-if-system-is-big-endian-or-little-endian

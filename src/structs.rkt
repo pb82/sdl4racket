@@ -3,7 +3,6 @@
 (require  
   ffi/unsafe)
 
-
 (provide  
   (all-defined-out))
           
@@ -436,7 +435,6 @@
    (data1 _pointer)
    (data2 _pointer)))
 
-;; Stub
 (define-cstruct _sdl-sys-wm-event
   ((type _uint8)
    (msg _pointer)))
