@@ -470,7 +470,7 @@
 (define (sdl-set-video-mode width height bpp flags)
   (SDL_SetVideoMode width height bpp (merge-flags flags)))
 
-;; sdl.blit-surface
+;; sdl-blit-surface
 (define-sdl SDL_UpperBlit 
   (_fun 
     _sdl-surface-pointer 
