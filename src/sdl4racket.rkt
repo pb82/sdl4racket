@@ -66,6 +66,8 @@
     (case type
       ((unix)     "libSDL")
       ((windows)  "SDL")
+      ;; correct? can't test on OS X
+      ((macosx)   "libSDL")
       (else (error "Platform not supported: " type)))))
 
 (define (sdl-image-get-lib)
@@ -73,6 +75,8 @@
     (case type
       ((unix)     "libSDL_image")
       ((windows)  "libSDL_image")
+      ;; correct? can't test on OS X
+      ((macosx)   "libSDL_image")
       (else (error "Platform not supported: " type)))))
 
 (define-ffi-definer define-sdl (ffi-lib (sdl-get-lib) #f))
