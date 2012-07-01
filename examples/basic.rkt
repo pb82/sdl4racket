@@ -24,8 +24,8 @@
   (let
     ((screen (sdl-set-video-mode 640 480 32 '(SDL_SWSURFACE SDL_DOUBLEBUF)))
      (logo   (sdl-display-format (img-load "logo.png")))
-     (srect  (make-sdl-rect 0 0 320 240))
-     (drect  (make-sdl-rect 160 120 320 240)))
+     (srect  (sdl-make-rect 0 0 320 240))
+     (drect  (sdl-make-rect 160 120 320 240)))
           
     (begin
       (sdl-blit-surface logo srect screen drect)
@@ -35,7 +35,7 @@
 (define (main-loop screen)
   (define (iter event)
     (begin
-      (sdl-wait-event (event 'POINTER))
+      (sdl-wait-event (event 'POINTER))      
       
       (let ((type (event 'TYPE)))
         (case type

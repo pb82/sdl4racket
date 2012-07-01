@@ -51,6 +51,12 @@
 (define SDL_GETEVENT      2)
 (define SDL_ALLEVENTS     #xFFFFFFFF)
 
+;; Event states. For use with sdl-event-state
+(define *event-states*
+  '((SDL_QUERY	         -1)
+    (SDL_IGNORE	          0)
+    (SDL_DISABLE	        0)
+    (SDL_ENABLE	          1)))
 
 ;; libSDL and libSDL_image initialization
 ;; ---------------------------------------------------------------------
@@ -99,8 +105,8 @@
 ;; ---------------------------------------------------------------------
 
 ;; merge-flags: bitwise-or a list
-(define (merge-flags flags)
-  (let ((vals (map (lambda (flag) (cadr (assoc flag *flags*))) flags)))
+(define (merge-flags flags flag-map)
+  (let ((vals (map (lambda (flag) (cadr (assoc flag flag-map))) flags)))
     (foldl (lambda (a b) (bitwise-ior a b)) 0 vals)))
 
 (define (assert condition value who)
@@ -137,6 +143,10 @@
     ((macosx) 'LITTLE)
     (else (error "Error determining system endianness"))))
 
+;; Just to have a uniform API. All sdl related functions should start
+;; with sdl-... This includes also structure creation.
+(define sdl-make-rect   make-sdl-rect)
+(define sdl-make-color  make-sdl-color)
 
 ;; Get a valid (in terms of endianness) bitmask for use with SDL_Surface
 ;; creation.
@@ -164,7 +174,7 @@
     -> (assert (= r 0) r 'sdl-init)))
     
 (define (sdl-init flags)
-  (SDL_Init (merge-flags flags)))
+  (SDL_Init (merge-flags flags *flags*)))
 
 ;; sdl-quit
 (define-sdl SDL_Quit 
@@ -226,7 +236,7 @@
     -> _int))
     
 (define (sdl-video-mode-ok width height bpp flags)
-  (let ((bpp (SDL_VideoModeOK width height bpp (merge-flags flags))))
+  (let ((bpp (SDL_VideoModeOK width height bpp (merge-flags flags *flags*))))
     (cons (> bpp 0) bpp)))
 
 ;; sdl-update-rects
@@ -256,7 +266,7 @@
     -> _int))
     
 (define (sdl-set-palette surface flags colors)
-  (let ((flags-value (merge-flags flags))
+  (let ((flags-value (merge-flags flags *flags*))
         (vector (list->cvector colors _sdl-color-pointer)))
     (SDL_SetPalette 
       surface 
@@ -325,7 +335,7 @@
     
 (define (sdl-create-rgb-surface flags w h bpp rmask gmask bmask amask)
   (SDL_CreateRGBSurface 
-    (merge-flags flags) 
+    (merge-flags flags *flags*) 
     w 
     h 
     bpp 
@@ -374,7 +384,7 @@
     -> _sdl-surface-pointer))
     
 (define (sdl-convert-surface source format flags)
-  (SDL_ConvertSurface source format (merge-flags flags)))
+  (SDL_ConvertSurface source format (merge-flags flags *flags*)))
 
 ;; sdl-rw-from-file
 (define-sdl SDL_RWFromFile 
@@ -410,7 +420,7 @@
     -> (assert (= 0 r) r 'sdl-set-color-key)))
     
 (define (sdl-set-color-key surface flag key)
-  (SDL_SetColorKey surface (merge-flags flag) key))
+  (SDL_SetColorKey surface (merge-flags flag *flags*) key))
 
 ;; sdl-set-aplhp
 (define-sdl SDL_SetAlpha 
@@ -419,7 +429,7 @@
     -> (assert (= 0 r) r 'sdl-set-alpha)))
     
 (define (sdl-set-alpha surface flags alpha)
-  (SDL_SetAlpha surface (merge-flags flags) alpha))
+  (SDL_SetAlpha surface (merge-flags flags *flags*) alpha))
 
 ;; sdl-set-clip-rect
 (define-sdl SDL_SetClipRect 
@@ -468,7 +478,7 @@
     -> _sdl-surface-pointer))
     
 (define (sdl-set-video-mode width height bpp flags)
-  (SDL_SetVideoMode width height bpp (merge-flags flags)))
+  (SDL_SetVideoMode width height bpp (merge-flags flags *flags*)))
 
 ;; sdl-blit-surface
 (define-sdl SDL_UpperBlit 
@@ -587,23 +597,6 @@
 (define (sdl-pump-events)
   (SDL_PumpEvents))
 
-;; sdl-wait-event
-(define-sdl SDL_WaitEvent 
-  (_fun _sdl-event-pointer 
-    -> (r : _int) 
-    -> (assert (= 1 r) r 'sdl-wait-events)))
-    
-(define (sdl-wait-event event)
-  (SDL_WaitEvent event))
-
-;; sdl-poll-event
-(define-sdl SDL_PollEvent 
-  (_fun _sdl-event-pointer 
-    -> _int))
-    
-(define (sdl-poll-event event)
-  (SDL_PollEvent event))
-
 ;; sdl-peep-events
 (define-sdl SDL_PeepEvents 
   (_fun _pointer _int _uint8 _uint32 
@@ -620,6 +613,140 @@
       (length events) 
       action 
       mask)))
+      
+;; sdl-poll-event
+(define-sdl SDL_PollEvent 
+  (_fun _sdl-event-pointer 
+    -> _int))
+    
+(define (sdl-poll-event event)
+  (SDL_PollEvent event))
+
+;; sdl-wait-event
+(define-sdl SDL_WaitEvent 
+  (_fun _sdl-event-pointer 
+    -> (r : _int) 
+    -> (assert (= 1 r) r 'sdl-wait-events)))
+    
+(define (sdl-wait-event event)
+  (SDL_WaitEvent event))
+
+;; TODO:
+;; MISSING:
+;; SDL_PushEvent
+;; SDL_GetEventFilter
+;; SDL_SetEventFilter
+
+;; sdl-event-state
+(define-sdl SDL_EventState
+  (_fun _sdl-event-type _int
+    -> _uint8))
+    
+(define (sdl-event-state type state)
+  (SDL_EventState type (merge-flags state *event-states*)))
+
+;; sdl-get-key-state
+(define-sdl SDL_GetKeyState
+  (_fun _pointer
+    -> _pointer))
+
+;; TODO:
+;; This function returns  a list that must be indexed with the values
+;; of the _sdl-key enum. Make this enum accessible to the user.
+(define (sdl-get-key-state)
+  (let* ((numkeys (malloc (ctype-sizeof _int)))
+         (result  (SDL_GetKeyState numkeys))
+         (length  (ptr-ref numkeys _int))
+         (vector  (make-cvector* result _uint8 length)))
+    (cvector->list vector)))
+
+;; sdl-get-mod-state
+(define-sdl SDL_GetModState
+  (_fun
+    -> _sdl-mod))
+    
+(define (sdl-get-mod-state) (SDL_GetModState))
+
+;; sdl-set-mod-state
+(define-sdl SDL_SetModState
+  (_fun _sdl-mod
+    -> _void))
+    
+;; TODO:
+;; Make the _sdl-mod enum accessible to the user.
+(define (sdl-set-mod-state state)
+  (SDL_SetModState state))
+
+;; TODO:
+;; MISSING:
+;; SDL_GetKeyName
+
+;; sdl-enable-unicode
+(define-sdl SDL_EnableUNICODE
+  (_fun _int
+    -> _int))
+    
+(define (sdl-enable-unicode enable)
+  (SDL_EnableUNICODE enable))
+
+;; sdl-enable-key-repeat
+(define-sdl SDL_EnableKeyRepeat
+  (_fun _int _int
+    -> (r : _int)
+    -> (assert (= r 0) r 'sdl-enable-key-repeat)))
+
+(define (sdl-enable-key-repeat delay interval)
+  (SDL_EnableKeyRepeat delay interval))
+
+;; sdl-get-mouse-state
+(define-sdl SDL_GetMouseState
+  (_fun _pointer _pointer
+    -> _uint8))
+    
+(define (sdl-get-mouse-state)
+  (let* ((x (malloc (ctype-sizeof _int)))
+         (y (malloc (ctype-sizeof _int)))
+         (r (SDL_GetMouseState x y)))
+    (begin
+      (list
+        r
+        (ptr-ref x _int)
+        (ptr-ref y _int)))))
+
+;; sdl-get-relative-mouse-state
+(define-sdl SDL_GetRelativeMouseState
+  (_fun _pointer _pointer
+    -> _uint8))
+    
+(define (sdl-get-relative-mouse-state)
+  (let* ((x (malloc (ctype-sizeof _int)))
+         (y (malloc (ctype-sizeof _int)))
+         (r (SDL_GetRelativeMouseState x y)))
+    (begin
+      (list
+        r
+        (ptr-ref x _int)
+        (ptr-ref y _int)))))
+
+;; sdl-get-app-state
+(define-sdl SDL_GetAppState
+  (_fun 
+    -> _uint8))
+    
+;; TODO:
+;; Make the result comparable to either of
+;; SDL_APPMOUSEFOCUS
+;; SDL_APPINPUTFOCUS
+;; SDL_APPACTIVE
+(define (sdl-get-app-state) (SDL_GetAppState))
+
+;; sdl-joystick-event-state
+(define-sdl SDL_JoystickEventState
+  (_fun _int
+    -> _int))
+    
+(define (sdl-joystick-event-state state)
+  (SDL_JoystickEventState (merge-flags state *event-states*))) 
 
 ;; SDL event structures are converted to function closures.
 ;; There is a constructor function for every event type, that
