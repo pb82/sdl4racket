@@ -586,6 +586,61 @@
   (SDL_WM_GrabInput mode))
 ;; ---------------------------------------------------------------------
 
+
+;; SDL timing
+;; ---------------------------------------------------------------------
+
+;; sdl-get-ticks
+(define-sdl SDL_GetTicks
+  (_fun
+    -> _uint32))
+    
+(define (sdl-get-ticks) (SDL_GetTicks))
+
+;; sdl-delay
+(define-sdl SDL_Delay
+  (_fun _uint32
+    -> _void))
+    
+(define (sdl-delay milliseconds) (SDL_Delay milliseconds))
+
+;; TODO:
+;; MISSING:
+;; SDL_AddTimer
+;; SDL_RemoveTimer
+;; SDL_SetTimer
+
+;; ---------------------------------------------------------------------
+
+
+;; SDL mouse
+;; ---------------------------------------------------------------------
+
+;; sdl-warp-mouse
+(define-sdl SDL_WarpMouse
+  (_fun _uint16 _uint16
+    -> _void))
+    
+(define (sdl-warp-mouse x y) (SDL_WarpMouse x y))
+
+;; TODO:
+;; MISSING:
+;; SDL_CreateCursor
+;; SDL_FreeCursor
+;; SDL_SetCursor
+;; SDL_GetCursor
+
+;; sdl-show-cursor
+(define-sdl SDL_ShowCursor
+  (_fun _int
+    -> _int))
+    
+(define (sdl-show-cursor toggle)
+  (SDL_ShowCursor (cadr (assoc toggle *event-states*))))
+
+;; ---------------------------------------------------------------------
+
+
 ;; SDL events
 ;; ---------------------------------------------------------------------
 
@@ -643,7 +698,7 @@
     -> _uint8))
     
 (define (sdl-event-state type state)
-  (SDL_EventState type (merge-flags state *event-states*)))
+  (SDL_EventState type (cadr (assoc state *event-states*))))
 
 ;; sdl-get-key-state
 (define-sdl SDL_GetKeyState
@@ -746,7 +801,7 @@
     -> _int))
     
 (define (sdl-joystick-event-state state)
-  (SDL_JoystickEventState (merge-flags state *event-states*))) 
+  (SDL_JoystickEventState (cadr (assoc state *event-states*))))
 
 ;; SDL event structures are converted to function closures.
 ;; There is a constructor function for every event type, that
