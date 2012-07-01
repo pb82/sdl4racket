@@ -126,26 +126,14 @@
 ;; Returns 'LITTLE on little endian systems (e.g. Linux on x86)
 ;; or 'BIG on big endian systems (e.g. Linux on PowerPC) Throws 
 ;; if the endianness could not be determined.
+;;
+;; Thanks to Jens Axel Søgaard (Racket Mailing List) for pointing me
+;; to the system-big-endian? function.
 (define (sdl-get-endianness)
-  (case (system-type 'os)
-    ((unix) 
-      ;; Thanks to 
-      ;; http://serverfault.com/questions/163487/...
-      ;; ...linux-how-to-tell-if-system-is-big-endian-or-little-endian
-      (let* ((out (process "echo -n I | od -to2 | head -n1 | cut -f2 -d' ' | cut -c6 "))
-             (result (read-line (car out))))
-        (begin
-          (close-input-port (car out))
-          (close-output-port (cadr out))
-          (close-input-port (cadddr out)))
-          (cond ((string=? result "1") 'LITTLE)
-            ((string=? result "0") 'BIG)
-            (else (error "Error determining system endianness")))))
-    ;; TODO: Windows on ARM?
-    ((windows) 'LITTLE)
-    ;; TODO: OS X on ppc?
-    ((macosx) 'LITTLE)
-    (else (error "Error determining system endianness"))))
+  (if (system-big-endian?)
+    'BIG
+    'LITTLE))
+
 
 ;; Just to have a uniform API. All sdl related functions should start
 ;; with sdl-... This includes also structure creation.
