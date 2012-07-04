@@ -643,6 +643,30 @@
     
 (define (sdl-num-joysticks) (SDL_NumJoysticks))
 
+;; sdl-joystick-name
+(define-sdl SDL_JoystickName
+  (_fun _int
+    -> _bytes))
+    
+(define (sdl-joystick-name index)
+  (SDL_JoystickName index))
+
+;; sdl-joystick-open
+(define-sdl SDL_JoystickOpen
+  (_fun _int
+    -> _sdl-joystick-pointer))
+    
+(define (sdl-joystick-open index)
+  (SDL_JoystickOpen index))
+
+
+;; sdl-joystick-index
+(define-sdl SDL_JoystickIndex
+  (_fun _sdl-joystick-pointer
+    -> _int))
+    
+(define (sdl-joystick-index joystick)
+  (SDL_JoystickIndex joystick))
 ;; ---------------------------------------------------------------------
 
 
