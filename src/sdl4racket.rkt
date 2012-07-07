@@ -667,6 +667,85 @@
     
 (define (sdl-joystick-index joystick)
   (SDL_JoystickIndex joystick))
+  
+;; sdl-joystick-num-axes
+(define-sdl SDL_JoystickNumAxes
+  (_fun _sdl-joystick-pointer
+    -> _int))
+    
+(define (sdl-joystick-num-axes joystick)
+  (SDL_JoystickNumAxes joystick))
+  
+;; sdl-joystick-num-balls
+(define-sdl SDL_JoystickNumBalls
+  (_fun _sdl-joystick-pointer
+    -> _int))
+    
+(define (sdl-joystick-num-balls joystick)
+  (SDL_JoystickNumBalls joystick))
+  
+;; sdl-joystick-num-buttons
+(define-sdl SDL_JoystickNumButtons
+  (_fun _sdl-joystick-pointer
+    -> _int))
+    
+(define (sdl-joystick-num-buttons joystick)
+  (SDL_JoystickNumButtons joystick))
+
+;; sdl-joystick-update
+(define-sdl SDL_JoystickUpdate
+  (_fun
+    -> _void))
+    
+(define (sdl-joystick-update)
+  (SDL_JoystickUpdate))
+  
+;; sdl-joystick-get-axis
+(define-sdl SDL_JoystickGetAxis
+  (_fun _sdl-joystick-pointer _int
+    -> _sint16))
+    
+(define (sdl-joystick-get-axis joystick axis)
+  (SDL_JoystickGetAxis joystick axis))
+  
+;; sdl-joystick-get-hat
+(define-sdl SDL_JoystickGetHat
+  (_fun _sdl-joystick-pointer _int
+    -> _uint8))
+    
+(define (sdl-joystick-get-hat joystick hat)
+  (SDL_JoystickGetHat joystick hat))
+  
+;; sdl-joystick-get-button
+(define-sdl SDL_JoystickGetButton
+  (_fun _sdl-joystick-pointer _int
+    -> _uint8))
+    
+(define (sdl-joystick-get-button joystick button)
+  (SDL_JoystickGetButton joystick button))  
+
+;; sdl-joystick-get-ball
+(define-sdl SDL_JoystickGetBall
+  (_fun _sdl-joystick-pointer _int _pointer _pointer
+    -> (r : _int)
+    -> (assert (= r 0) r 'sdl-joystick-get-ball)))
+    
+(define (sdl-joystick-get-ball joystick ball)
+  (let* ((dx (malloc (ctype-sizeof _int)))
+         (dy (malloc (ctype-sizeof _int)))
+         (r  (SDL_JoystickGetBall joystick ball dx dy)))
+      (list        
+        (ptr-ref dx _int)
+        (ptr-ref dy _int))))
+
+;; sdl-joystick-close
+(define-sdl SDL_JoystickClose
+  (_fun _sdl-joystick-pointer
+    -> _void))
+    
+(define (sdl-joystick-close joystick)
+  (SDL_JoystickClose joystick))
+    
 ;; ---------------------------------------------------------------------
 
 
