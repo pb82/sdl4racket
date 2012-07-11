@@ -168,6 +168,27 @@
 (define (sdl-init flags)
   (SDL_Init (merge-flags flags *flags*)))
 
+;; sdl-init-subsystem
+(define-sdl SDL_InitSubSystem
+  (_fun _uint32
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-init-subsystem)))
+    
+(define (sdl-init-subsystem flags)
+  (SDL_InitSubSystem (merge-flags flags *flags*)))
+
+;; sdl-quit-subsystem
+(define-sdl SDL_QuitSubSystem
+  (_fun _uint32
+    -> _void))
+    
+(define (sdl-quit-subsystem flags)
+  (SDL_QuitSubSystem (merge-flags flags *flags*)))
+
+;; TODO
+;; MISSING
+;; sdl-was-init
+
 ;; sdl-quit
 (define-sdl SDL_Quit 
   (_fun 
