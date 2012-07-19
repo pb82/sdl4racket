@@ -185,10 +185,6 @@
 (define (sdl-quit-subsystem flags)
   (SDL_QuitSubSystem (merge-flags flags *flags*)))
 
-;; TODO
-;; MISSING
-;; sdl-was-init
-
 ;; sdl-quit
 (define-sdl SDL_Quit 
   (_fun 
@@ -197,6 +193,14 @@
 (define (sdl-quit)
   (SDL_Quit))
 
+;; sdl-was-init
+(define-sdl SDL_WasInit
+  (_fun _uint32
+    -> _int))
+    
+(define (sdl-was-init flags)
+  (SDL_WasInit (merge-flags flags *flags*)))
+
 ;; sdl-get-error
 (define-sdl SDL_GetError 
   (_fun 
@@ -204,6 +208,30 @@
     
 (define (sdl-get-error)
   (SDL_GetError))
+  
+;; TODO
+;; MISSING
+;; SDL_SetError
+;; SDL_Error
+
+;; sdl-clear-error
+(define-sdl SDL_ClearError
+  (_fun
+    -> _void))
+    
+(define (sdl-clear-error)
+  (SDL_ClearError))
+
+;; TODO:
+;; MISSING:
+;; SDL_LoadObject
+;; SDL_LoadFunction
+;; SDL_UnloadObject
+;; SDL_envvars
+;; SDL_VERISON
+;; SDL_Linked_Version
+;; SDL_version
+
 ;; ---------------------------------------------------------------------
 
 
@@ -767,6 +795,20 @@
 (define (sdl-joystick-close joystick)
   (SDL_JoystickClose joystick))
     
+;; ---------------------------------------------------------------------
+
+
+;; SDL CD-ROM
+;; ---------------------------------------------------------------------
+
+;; sdl-cd-num-drives
+(define-sdl SDL_CDNumDrives
+  (_fun
+    -> _int))
+
+(define (sdl-cd-num-drives)
+  (SDL_CDNumDrives))
+
 ;; ---------------------------------------------------------------------
 
 
