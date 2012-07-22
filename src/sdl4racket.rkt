@@ -74,7 +74,7 @@
   (let ((type (system-type 'os)))
     (case type
       ((unix)     "libSDL_image")
-      ((windows)  "libSDL_image")
+      ((windows)  "SDL_image")
       ;; correct? can't test on OS X
       ((macosx)   "libSDL_image")
       (else (error "Platform not supported: " type)))))
