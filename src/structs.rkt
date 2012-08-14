@@ -448,6 +448,34 @@
 ;; ---------------------------------------------------------------------
 
 (define-cstruct _sdl-joystick
-      ((ptr _pointer)))
+  ((ptr _pointer)))
+
+;; ---------------------------------------------------------------------
+
+
+;; SDL CD-ROM
+;; ---------------------------------------------------------------------
+
+(define _CDStatus
+  (_enum
+    '(CD_TRAYEMPTY
+      CD_STOPPED
+      CD_PLAYING
+      CD_PAUSED
+      CD_ERROR = -1)))
+
+(define-cstruct _SDL_CDtrack
+  ((id _uint8)
+   (type _uint8)
+   (length _uint32)
+   (offset _uint32)))
+
+(define-cstruct _SDL_CD
+  ((id _int)
+   (status _CDStatus)
+   (numtracks _int)
+   (cur_track _int)
+   (cur_frame _int)
+   (track _SDL_CDtrack-pointer)))
 
 ;; ---------------------------------------------------------------------

@@ -27,14 +27,14 @@
      (srect  (sdl-make-rect 0 0 320 240))
      (drect  (sdl-make-rect 160 120 320 240)))
           
-    (begin
+    (begin        
       (sdl-blit-surface logo srect screen drect)
       (sdl-flip screen)
       screen)))
 
 (define (main-loop screen)
   (define (iter event)
-    (begin
+    (begin      
       (sdl-wait-event (event 'POINTER))      
       
       (let ((type (event 'TYPE)))

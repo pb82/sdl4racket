@@ -190,8 +190,7 @@
   (_fun 
     -> _void))
   
-(define (sdl-quit)
-  (SDL_Quit))
+(define sdl-quit SDL_Quit)
 
 ;; sdl-was-init
 (define-sdl SDL_WasInit
@@ -206,8 +205,7 @@
   (_fun 
     -> _bytes))
     
-(define (sdl-get-error)
-  (SDL_GetError))
+(define sdl-get-error SDL_GetError)
   
 ;; TODO
 ;; MISSING
@@ -219,8 +217,7 @@
   (_fun
     -> _void))
     
-(define (sdl-clear-error)
-  (SDL_ClearError))
+(define sdl-clear-error SDL_ClearError)
 
 ;; TODO:
 ;; MISSING:
@@ -242,17 +239,15 @@
 (define-sdl SDL_GetVideoSurface 
   (_fun 
     -> _sdl-surface-pointer))
-    
-(define (sdl-get-video-surface)
-  (SDL_GetVideoSurface))
 
+(define sdl-get-video-surface SDL_GetVideoSurface)
+    
 ;; sdl-get-video-info
 (define-sdl SDL_GetVideoInfo 
   (_fun 
     -> _sdl-video-info-pointer))
     
-(define (sdl-get-video-info)
-  (SDL_GetVideoInfo))
+(define sdl-get-video-info SDL_GetVideoInfo)
 
 ;; sdl-video-driver-name
 (define-sdl SDL_VideoDriverName 
@@ -408,16 +403,14 @@
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-lock-surface)))
     
-(define (sdl-lock-surface surface)
-  (SDL_LockSurface surface))
+(define sdl-lock-surface SDL_LockSurface)
 
 ;; sdl-unlock-surface
 (define-sdl SDL_UnlockSurface 
   (_fun _sdl-surface-pointer 
     -> _void))
     
-(define (sdl-unlock-surface surface)
-  (SDL_UnlockSurface surface))
+(define sdl-unlock-surface SDL_UnlockSurface)
 
 ;; sdl-convert-surface
 (define-sdl SDL_ConvertSurface 
@@ -477,8 +470,7 @@
   (_fun _sdl-surface-pointer _sdl-rect-pointer 
     -> _void))
     
-(define (sdl-set-clip-rect surface rect)
-  (SDL_SetClipRect surface rect))
+(define sdl-set-clip-rect SDL_SetClipRect)
 
 ;; sdl-get-clip-rect
 (define-sdl SDL_GetClipRect 
@@ -497,8 +489,7 @@
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-fill-rect)))
     
-(define (sdl-fill-rect surface rect color)
-  (SDL_FillRect surface rect color))
+(define sdl-fill-rect SDL_FillRect)
 
 ;; TODO:
 ;; MISSING:
@@ -531,48 +522,43 @@
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-blit-surface)))
     
-(define (sdl-blit-surface s srect d drect)
-  (SDL_UpperBlit s srect d drect))
+(define sdl-blit-surface SDL_UpperBlit)
 
 ;; sdl-update-rect
 (define-sdl SDL_UpdateRect 
   (_fun _sdl-surface-pointer _sint32 _sint32 _sint32 _sint32 
     -> _void))
     
-(define (sdl-update-rect screen x y w h)
-  (SDL_UpdateRect screen x y w h))
+(define sdl-update-rect SDL_UpdateRect)
 
 ;; sdl-free-surface
 (define-sdl SDL_FreeSurface 
   (_fun _sdl-surface-pointer 
     -> _void))
     
-(define (sdl-free-surface surface)
-  (SDL_FreeSurface surface))
+(define sdl-free-surface SDL_FreeSurface)
 
 ;; sdl-flip
 (define-sdl SDL_Flip 
   (_fun _sdl-surface-pointer 
     -> _void))
     
-(define (sdl-flip surface)
-  (SDL_Flip surface))
+(define sdl-flip SDL_Flip)
 
 ;; sdl-display-format
 (define-sdl SDL_DisplayFormat 
   (_fun _sdl-surface-pointer 
     -> _sdl-surface-pointer))
     
-(define (sdl-display-format surface)
-  (SDL_DisplayFormat surface))
+(define sdl-display-format SDL_DisplayFormat)
 
 ;; sdl-display-format-alpha
 (define-sdl SDL_DisplayFormatAlpha 
   (_fun _sdl-surface-pointer 
     -> _sdl-surface-pointer))
     
-(define (sdl-display-format-alpha surface)
-  (SDL_DisplayFormatAlpha surface))
+(define sdl-display-format-alpha SDL_DisplayFormatAlpha)
+
 ;; ---------------------------------------------------------------------
 
 
@@ -599,32 +585,28 @@
   (_fun _sdl-surface-pointer _uint8 
     -> _void))
     
-(define (sdl-wm-set-icon surface mask)
-  (SDL_WM_SetIcon surface mask))
+(define sdl-wm-set-icon SDL_WM_SetIcon)
 
 ;; sdl-wm-iconify-window
 (define-sdl SDL_WM_IconifyWindow 
   (_fun 
     -> _int))
     
-(define (sdl-wm-iconify-window)
-  (SDL_WM_IconifyWindow))
+(define sdl-wm-iconify-window SDL_WM_IconifyWindow)
 
 ;; sdl-toggle-fullscreen
 (define-sdl SDL_WM_ToggleFullScreen 
   (_fun _sdl-surface-pointer 
     -> _int))
     
-(define (sdl-wm-toggle-fullscreen surface)
-  (SDL_WM_ToggleFullScreen surface))
+(define sdl-wm-toggle-fullscreen SDL_WM_ToggleFullScreen)
 
 ;; sdl-wm-grab-input
 (define-sdl SDL_WM_GrabInput 
   (_fun _int 
     -> _int))
     
-(define (sdl-wm-grab-input mode)
-  (SDL_WM_GrabInput mode))
+(define sdl-wm-grab-input SDL_WM_GrabInput)
 ;; ---------------------------------------------------------------------
 
 
@@ -636,14 +618,14 @@
   (_fun
     -> _uint32))
     
-(define (sdl-get-ticks) (SDL_GetTicks))
+(define sdl-get-ticks SDL_GetTicks)
 
 ;; sdl-delay
 (define-sdl SDL_Delay
   (_fun _uint32
     -> _void))
     
-(define (sdl-delay milliseconds) (SDL_Delay milliseconds))
+(define sdl-delay SDL_Delay)
 
 ;; TODO:
 ;; MISSING:
@@ -662,7 +644,7 @@
   (_fun _uint16 _uint16
     -> _void))
     
-(define (sdl-warp-mouse x y) (SDL_WarpMouse x y))
+(define sdl-warp-mouse SDL_WarpMouse)
 
 ;; TODO:
 ;; MISSING:
@@ -690,88 +672,77 @@
   (_fun
     -> _int))
     
-(define (sdl-num-joysticks) (SDL_NumJoysticks))
+(define sdl-num-joysticks SDL_NumJoysticks)
 
 ;; sdl-joystick-name
 (define-sdl SDL_JoystickName
   (_fun _int
     -> _bytes))
     
-(define (sdl-joystick-name index)
-  (SDL_JoystickName index))
+(define sdl-joystick-name SDL_JoystickName)
 
 ;; sdl-joystick-open
 (define-sdl SDL_JoystickOpen
   (_fun _int
     -> _sdl-joystick-pointer))
     
-(define (sdl-joystick-open index)
-  (SDL_JoystickOpen index))
-
+(define sdl-joystick-open SDL_JoystickOpen)
 
 ;; sdl-joystick-index
 (define-sdl SDL_JoystickIndex
   (_fun _sdl-joystick-pointer
     -> _int))
     
-(define (sdl-joystick-index joystick)
-  (SDL_JoystickIndex joystick))
+(define sdl-joystick-index SDL_JoystickIndex)
   
 ;; sdl-joystick-num-axes
 (define-sdl SDL_JoystickNumAxes
   (_fun _sdl-joystick-pointer
     -> _int))
-    
-(define (sdl-joystick-num-axes joystick)
-  (SDL_JoystickNumAxes joystick))
+
+(define sdl-joystick-num-axes SDL_JoystickNumAxes)
   
 ;; sdl-joystick-num-balls
 (define-sdl SDL_JoystickNumBalls
   (_fun _sdl-joystick-pointer
     -> _int))
     
-(define (sdl-joystick-num-balls joystick)
-  (SDL_JoystickNumBalls joystick))
+(define sdl-joystick-num-balls SDL_JoystickNumBalls)
   
 ;; sdl-joystick-num-buttons
 (define-sdl SDL_JoystickNumButtons
   (_fun _sdl-joystick-pointer
     -> _int))
     
-(define (sdl-joystick-num-buttons joystick)
-  (SDL_JoystickNumButtons joystick))
+(define sdl-joystick-num-buttons SDL_JoystickNumButtons)
 
 ;; sdl-joystick-update
 (define-sdl SDL_JoystickUpdate
   (_fun
     -> _void))
     
-(define (sdl-joystick-update)
-  (SDL_JoystickUpdate))
+(define sdl-joystick-update SDL_JoystickUpdate)
   
 ;; sdl-joystick-get-axis
 (define-sdl SDL_JoystickGetAxis
   (_fun _sdl-joystick-pointer _int
     -> _sint16))
     
-(define (sdl-joystick-get-axis joystick axis)
-  (SDL_JoystickGetAxis joystick axis))
+(define sdl-joystick-get-axis SDL_JoystickGetAxis)
   
 ;; sdl-joystick-get-hat
 (define-sdl SDL_JoystickGetHat
   (_fun _sdl-joystick-pointer _int
     -> _uint8))
     
-(define (sdl-joystick-get-hat joystick hat)
-  (SDL_JoystickGetHat joystick hat))
+(define sdl-joystick-get-hat SDL_JoystickGetHat)
   
 ;; sdl-joystick-get-button
 (define-sdl SDL_JoystickGetButton
   (_fun _sdl-joystick-pointer _int
     -> _uint8))
     
-(define (sdl-joystick-get-button joystick button)
-  (SDL_JoystickGetButton joystick button))  
+(define sdl-joystick-get-button SDL_JoystickGetButton)
 
 ;; sdl-joystick-get-ball
 (define-sdl SDL_JoystickGetBall
@@ -792,8 +763,7 @@
   (_fun _sdl-joystick-pointer
     -> _void))
     
-(define (sdl-joystick-close joystick)
-  (SDL_JoystickClose joystick))
+(define sdl-joystick-close SDL_JoystickClose)
     
 ;; ---------------------------------------------------------------------
 
@@ -806,8 +776,83 @@
   (_fun
     -> _int))
 
-(define (sdl-cd-num-drives)
-  (SDL_CDNumDrives))
+(define sdl-cd-num-drives SDL_CDNumDrives)
+
+;; sdl-cd-name
+(define-sdl SDL_CDName 
+  (_fun _int
+    -> _bytes))
+    
+(define sdl-cd-name SDL_CDName)
+
+;; sdl-cd-open
+(define-sdl SDL_CDOpen
+  (_fun _int
+    -> _SDL_CD-pointer))
+    
+(define sdl-cd-open SDL_CDOpen)
+
+;; sdl-cd-status
+(define-sdl SDL_CDStatus
+  (_fun _SDL_CD-pointer
+    -> _CDStatus))
+
+(define sdl-cd-status SDL_CDStatus)
+
+;; sdl-cd-play
+(define-sdl SDL_CDPlay
+  (_fun _SDL_CD-pointer _int _int
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-cd-play)))
+    
+(define sdl-cd-play SDL_CDPlay)
+    
+;; sdl-cd-play-tracks
+(define-sdl SDL_CDPlayTracks
+  (_fun _SDL_CD-pointer _int _int _int _int
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-cd-play-tracks)))
+    
+(define sdl-cd-play-tracks SDL_CDPlayTracks)
+
+;; sdl-cd-pause
+(define-sdl SDL_CDPause
+  (_fun _SDL_CD-pointer
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-cd-pause)))
+
+(define sdl-cd-pause SDL_CDPause)
+
+;; sdl-cd-resume
+(define-sdl SDL_CDResume
+  (_fun _SDL_CD-pointer
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-cd-resume)))
+
+(define sdl-cd-resume SDL_CDResume)
+
+;; sdl-cd-stop
+(define-sdl SDL_CDStop
+  (_fun _SDL_CD-pointer
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-cd-stop)))
+
+(define sdl-cd-stop SDL_CDStop)
+
+;; sdl-cd-eject
+(define-sdl SDL_CDEject
+  (_fun _SDL_CD-pointer
+    -> (r : _int) 
+    -> (assert (= r 0) r 'sdl-cd-eject)))
+
+(define sdl-cd-eject SDL_CDEject)
+
+;; sdl-cd-close
+(define-sdl SDL_CDClose
+  (_fun _SDL_CD-pointer
+    -> _void))
+    
+(define sdl-cd-close SDL_CDClose)
 
 ;; ---------------------------------------------------------------------
 
