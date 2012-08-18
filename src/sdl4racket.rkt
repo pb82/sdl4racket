@@ -160,6 +160,7 @@
 ;; ---------------------------------------------------------------------
 
 ;; sdl-init
+
 (define-sdl SDL_Init 
   (_fun _uint32 
     -> (r : _int) 
@@ -497,7 +498,13 @@
 ;; SDL_GetProcAddress (?)
 ;; SDL_GetAttribute
 ;; SDL_SetAttribute
-;; SDL_SwapBuffers
+
+(define-sdl SDL_GL_SwapBuffers
+  (_fun
+    -> _void))
+    
+(define sdl-gl-swap-buffers SDL_GL_SwapBuffers)
+
 ;; SDL_GLattr
 ;; SDL_CreateYUVOverlay
 ;; SDL_LockYUVOverlay
