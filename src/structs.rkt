@@ -479,3 +479,19 @@
    (track _SDL_CDtrack-pointer)))
 
 ;; ---------------------------------------------------------------------
+
+
+;; SDL Audio
+;; ---------------------------------------------------------------------
+
+(define-cstruct _SDL_AudioSpec
+      ((freq _int)
+       (format _uint16)
+       (channels _uint8)
+       (silence _uint8)
+       (samples _uint16)
+       (size _uint32)
+       (callback (_fun _pointer _pointer _int -> _void))
+       (userdata _pointer)))
+
+;; ---------------------------------------------------------------------
