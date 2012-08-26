@@ -400,16 +400,38 @@
 (define sdl-map-rgba SDL_MapRGBA)
 
 ;; sdl-get-rgb
-(define SDL_GetRGB 
-  (_fun _uint32 _sdl-pixel-format-pointer _uint8 _uint8 _uint8
+(define-sdl SDL_GetRGB 
+  (_fun _uint32 _sdl-pixel-format-pointer _pointer _pointer _pointer
     -> _void))
     
-(define sdl-get-rgb SDL_GetRGB)
+(define (sdl-get-rgb pixel pixel-format r g b)
+  (let ((_r (malloc (ctype-sizeof _uint8)))
+        (_g (malloc (ctype-sizeof _uint8)))
+        (_b (malloc (ctype-sizeof _uint8))))
+    (begin
+      (SDL_GetRGB pixel pixel-format _r _g _b)
+      (list
+        (ptr-ref _r _uint8)
+        (ptr-ref _g _uint8)
+        (ptr-ref _b _uint8)))))
 
-;; TODO:
-;; MISSING:
-;; SDL_GetRGB
-;; SDL_GetRGBA
+;; sdl-get-rgba
+(define-sdl SDL_GetRGBA
+  (_fun _uint32 _sdl-pixel-format-pointer _pointer _pointer _pointer _pointer
+    -> _void))
+    
+(define (sdl-get-rgba pixel pixel-format r g b a)
+  (let ((_r (malloc (ctype-sizeof _uint8)))
+        (_g (malloc (ctype-sizeof _uint8)))
+        (_b (malloc (ctype-sizeof _uint8)))
+        (_a (malloc (ctype-sizeof _uint8))))        
+    (begin
+      (SDL_GetRGBA pixel pixel-format _r _g _b _a)
+      (list
+        (ptr-ref _r _uint8)
+        (ptr-ref _g _uint8)
+        (ptr-ref _b _uint8)
+        (ptr-ref _a _uint8)))))
 
 ;; sdl-create-rgb-surface
 (define-sdl SDL_CreateRGBSurface 
