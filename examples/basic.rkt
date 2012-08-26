@@ -30,7 +30,6 @@
     (begin        
       (sdl-blit-surface logo srect screen drect)
       (sdl-flip screen)
-      (printf "rgb: ~a\n" (sdl-map-rgba (sdl-surface-format screen) 0 12 128 128))
       screen)))
 
 (define (main-loop screen)

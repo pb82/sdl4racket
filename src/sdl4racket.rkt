@@ -399,6 +399,13 @@
 
 (define sdl-map-rgba SDL_MapRGBA)
 
+;; sdl-get-rgb
+(define SDL_GetRGB 
+  (_fun _uint32 _sdl-pixel-format-pointer _uint8 _uint8 _uint8
+    -> _void))
+    
+(define sdl-get-rgb SDL_GetRGB)
+
 ;; TODO:
 ;; MISSING:
 ;; SDL_GetRGB
