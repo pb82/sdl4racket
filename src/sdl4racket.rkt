@@ -8,8 +8,15 @@
   "./structs.rkt")
 
 (provide (all-defined-out))
-(provide make-sdl-rect)
-(provide make-sdl-color)
+(provide (struct-out sdl-surface))
+(provide (struct-out sdl-rect))
+(provide (struct-out sdl-color))
+(provide (struct-out sdl-palette))
+(provide (struct-out sdl-pixel-format))
+(provide (struct-out sdl-video-info))
+(provide (struct-out sdl-joystick))
+(provide (struct-out sdl-cd))
+(provide (struct-out sdl-cdtrack))
 
 (define *flags* 
  '((SDL_INIT_TIMER        #x00000001)
@@ -57,6 +64,15 @@
     (SDL_IGNORE	          0)
     (SDL_DISABLE	        0)
     (SDL_ENABLE	          1)))
+
+;; Predefined error messages
+(define *sdl-error*
+  '((SDL_ENOMEM           0)
+    (SDL_EFREAD           1)
+    (SDL_EFWRITE          2)
+    (SDL_EFSEEK           3)
+    (SDL_UNSUPPORTED      4)
+    (SDL_LASTERROR        5)))
 
 ;; libSDL and libSDL_image initialization
 ;; ---------------------------------------------------------------------
@@ -207,11 +223,22 @@
     -> _bytes))
     
 (define sdl-get-error SDL_GetError)
-  
-;; TODO
-;; MISSING
-;; SDL_SetError
-;; SDL_Error
+
+;; sdl-set-error
+(define-sdl SDL_SetError
+  (_fun _bytes
+    -> _void))
+    
+(define (sdl-set-error message)
+  (SDL_SetError (string->bytes/locale message)))
+
+;; sdl-error
+(define-sdl SDL_Error
+  (_fun _uint8
+    -> _void))
+
+(define (sdl-error error-flag)
+  (SDL_Error (cadr (assoc error-flag *sdl-error*))))
 
 ;; sdl-clear-error
 (define-sdl SDL_ClearError
@@ -358,10 +385,22 @@
       (cvector-ptr gvector) 
       (cvector-ptr bvector))))
 
+;; sdl-map-rgb
+(define-sdl SDL_MapRGB
+  (_fun _sdl-pixel-format-pointer _uint8 _uint8 _uint8
+    -> _uint32))
+
+(define sdl-map-rgb SDL_MapRGB)
+
+;; sdl-map-rgba
+(define-sdl SDL_MapRGBA
+  (_fun _sdl-pixel-format-pointer _uint8 _uint8 _uint8 _uint8
+    -> _uint32))
+
+(define sdl-map-rgba SDL_MapRGBA)
+
 ;; TODO:
 ;; MISSING:
-;; SDL_MapRGB
-;; SDL_MapRGBA
 ;; SDL_GetRGB
 ;; SDL_GetRGBA
 
@@ -795,20 +834,20 @@
 ;; sdl-cd-open
 (define-sdl SDL_CDOpen
   (_fun _int
-    -> _SDL_CD-pointer))
+    -> _sdl-cd-pointer))
     
 (define sdl-cd-open SDL_CDOpen)
 
 ;; sdl-cd-status
 (define-sdl SDL_CDStatus
-  (_fun _SDL_CD-pointer
+  (_fun _sdl-cd-pointer
     -> _CDStatus))
 
-(define sdl-cd-status SDL_CDStatus)
+(define sdl-cd-state SDL_CDStatus)
 
 ;; sdl-cd-play
 (define-sdl SDL_CDPlay
-  (_fun _SDL_CD-pointer _int _int
+  (_fun _sdl-cd-pointer _int _int
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-cd-play)))
     
@@ -816,7 +855,7 @@
     
 ;; sdl-cd-play-tracks
 (define-sdl SDL_CDPlayTracks
-  (_fun _SDL_CD-pointer _int _int _int _int
+  (_fun _sdl-cd-pointer _int _int _int _int
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-cd-play-tracks)))
     
@@ -824,7 +863,7 @@
 
 ;; sdl-cd-pause
 (define-sdl SDL_CDPause
-  (_fun _SDL_CD-pointer
+  (_fun _sdl-cd-pointer
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-cd-pause)))
 
@@ -832,7 +871,7 @@
 
 ;; sdl-cd-resume
 (define-sdl SDL_CDResume
-  (_fun _SDL_CD-pointer
+  (_fun _sdl-cd-pointer
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-cd-resume)))
 
@@ -840,7 +879,7 @@
 
 ;; sdl-cd-stop
 (define-sdl SDL_CDStop
-  (_fun _SDL_CD-pointer
+  (_fun _sdl-cd-pointer
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-cd-stop)))
 
@@ -848,7 +887,7 @@
 
 ;; sdl-cd-eject
 (define-sdl SDL_CDEject
-  (_fun _SDL_CD-pointer
+  (_fun _sdl-cd-pointer
     -> (r : _int) 
     -> (assert (= r 0) r 'sdl-cd-eject)))
 
@@ -856,10 +895,18 @@
 
 ;; sdl-cd-close
 (define-sdl SDL_CDClose
-  (_fun _SDL_CD-pointer
+  (_fun _sdl-cd-pointer
     -> _void))
     
 (define sdl-cd-close SDL_CDClose)
+
+;; ---------------------------------------------------------------------
+
+
+;; SDL Audio
+;; ---------------------------------------------------------------------
+
+(define sdl-make-audio-spec make-SDL_AudioSpec)
 
 ;; ---------------------------------------------------------------------
 

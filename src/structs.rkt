@@ -5,7 +5,7 @@
 
 (provide  
   (all-defined-out))
-          
+
 (define-cstruct _sdl-rect
   ((x _sint16)
    (y _sint16)
@@ -464,19 +464,19 @@
       CD_PAUSED
       CD_ERROR = -1)))
 
-(define-cstruct _SDL_CDtrack
+(define-cstruct _sdl-cdtrack
   ((id _uint8)
    (type _uint8)
    (length _uint32)
    (offset _uint32)))
 
-(define-cstruct _SDL_CD
+(define-cstruct _sdl-cd
   ((id _int)
    (status _CDStatus)
    (numtracks _int)
    (cur_track _int)
    (cur_frame _int)
-   (track _SDL_CDtrack-pointer)))
+   (track _sdl-cdtrack-pointer)))
 
 ;; ---------------------------------------------------------------------
 

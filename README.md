@@ -30,3 +30,8 @@ will return the correct event closure, according to the current event type.
 
 This binding is not complete, however a reasonable part of SDL_Video
 and the event handling is already working.
+
+
+Variations from libSDL:
+
+  * SDL_CDStatus is not available as sdl-cd-status but as sdl-cd-state in order to prevent a collision with the sdl-cd struct getter for 'status'
