@@ -23,13 +23,13 @@
 (define (init-screen)
   (let
     ((screen (sdl-set-video-mode 640 480 32 '(SDL_SWSURFACE SDL_DOUBLEBUF)))
-     (logo   (sdl-display-format (img-load "logo.png")))
-     (srect  (sdl-make-rect 0 0 320 240))
-     (drect  (sdl-make-rect 160 120 320 240)))
+     #;(logo   (sdl-display-format (img-load "logo.png")))
+     #;(srect  (sdl-make-rect 0 0 320 240))
+     #;(drect  (sdl-make-rect 160 120 320 240)))
           
     (begin        
-      (sdl-blit-surface logo srect screen drect)
-      (sdl-flip screen)
+      #;(sdl-blit-surface logo srect screen drect)
+      #;(sdl-flip screen)
       screen)))
 
 (define (main-loop screen)
@@ -58,5 +58,11 @@
     (let ((event (sdl-make-event)))
       (iter event))))
 
+(printf "initializing\n")
 (init-sdl)
-(main-loop (init-screen))
+
+(printf "creating screen\n")
+(define screen (init-screen))
+
+(printf "beginning main loop\n")
+(main-loop screen)

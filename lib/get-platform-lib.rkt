@@ -28,6 +28,11 @@
        #'(define-runtime-path sdl-library-path
            (build-path "win64" "libSDL-1.2.so.0.11.4"))]
       [(macosx)
+       ;; FIXME: we must do some extra stuff
+       ;; with regards to Mac OS X.  Will probably look something
+       ;; like this:
+       ;; https://github.com/albertz/PySDL/blob/master/SDL/__init__.py
+
        #'(begin
            (log-debug "sdl: macosx")
            (define-runtime-path sdl-library-path
