@@ -5,7 +5,8 @@
   ffi/unsafe/define
   ffi/cvector
   ffi/unsafe/cvector
-  "./structs.rkt")
+  "structs.rkt"
+  "../lib/get-platform-lib.rkt")
 
 (provide (all-defined-out))
 (provide (struct-out sdl-surface))
@@ -77,14 +78,6 @@
 ;; libSDL and libSDL_image initialization
 ;; ---------------------------------------------------------------------
 
-(define (sdl-get-lib)
-  (let ((type (system-type 'os)))
-    (case type
-      ((unix)     "libSDL")
-      ((windows)  "SDL")
-      ;; correct? can't test on OS X
-      ((macosx)   "libSDL")
-      (else (error "Platform not supported: " type)))))
 
 (define (sdl-image-get-lib)
   (let ((type (system-type 'os)))
@@ -95,7 +88,7 @@
       ((macosx)   "libSDL_image")
       (else (error "Platform not supported: " type)))))
 
-(define-ffi-definer define-sdl (ffi-lib (sdl-get-lib) #f))
+(define-ffi-definer define-sdl sdl-lib)
 
 ;; Try to load the SDL_image lib and provide IMG_load, the generic
 ;; entry point for all sorts of images. This can fail (if SDL_image
@@ -110,7 +103,7 @@
 (with-handlers 
   ((exn:fail? 
     (lambda (ex) 
-      (printf "Failed to load optional dependency: SDL_image: ~a" ex))))      
+      (log-debug "Failed to load optional dependency: SDL_image: ~a" ex))))      
     (begin
       (define-ffi-definer define-img (ffi-lib (sdl-image-get-lib) #f))
       (define-img IMG_Load (_fun _bytes -> _sdl-surface-pointer))
