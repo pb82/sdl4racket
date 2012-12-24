@@ -1,13 +1,13 @@
 #lang racket/base
 
-(require racket/ffi
+(require ffi/unsafe
          racket/runtime-path
          (for-syntax racket/base
                      racket/syntax))
 
 (define-syntax (define-sdl-library-path stx)
   (with-syntax ([sdl-library-path
-                 (format-id stx "sdl-library-path" stx)])
+                 (format-id stx "sdl-library-path" #:source stx)])
     (case (system-type 'os)
       [(unix)
        (define machine-type (system-type 'machine))
@@ -20,7 +20,12 @@
        #'(define-runtime-path sdl-library-path
            (build-path "win64" "libSDL-1.2.so.0.11.4"))]
       [(macosx)
-       #'(define-runtime-path sdl-library-path
-           (build-path "macosx" "SDL"))])))
+       #'(begin
+           (log-debug "sdl: macosx")
+           (define-runtime-path sdl-library-path
+             (build-path "macosx" "SDL")))])))
 
 (define-sdl-library-path)
+(define sdl-lib (ffi-lib sdl-library-path))
+
+(provide sdl-lib)
