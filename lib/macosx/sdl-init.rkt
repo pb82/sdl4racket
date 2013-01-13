@@ -76,7 +76,7 @@
 
 
 
-(initialize-ns-app (lambda () 
+#;(initialize-ns-app (lambda () 
                      (printf "Hello, I am here\n")
                      (void)))
 
