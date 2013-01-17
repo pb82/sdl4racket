@@ -103,7 +103,7 @@
 (with-handlers 
   ((exn:fail? 
     (lambda (ex) 
-      (log-debug "Failed to load optional dependency: SDL_image: ~a" ex))))      
+      (log-debug (format "Failed to load optional dependency: SDL_image: ~a" ex)))))
     (begin
       (define-ffi-definer define-img (ffi-lib (sdl-image-get-lib) #f))
       (define-img IMG_Load (_fun _bytes -> _sdl-surface-pointer))
