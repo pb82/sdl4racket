@@ -1,9 +1,7 @@
 #!/usr/bin/env racket
 #lang racket
 
-(require  
-  "../src/sdl4racket.rkt"
-  "../lib/macosx/sdl-init.rkt")
+(require "../src/sdl4racket.rkt")
 
 ;; Demonstrates initialization, surfaces and simple event handling.
 ;; ---------------------------------------------------------------------
@@ -30,7 +28,7 @@
           
     (begin        
       #;(sdl-blit-surface logo srect screen drect)
-      #;(sdl-flip screen)
+      (sdl-flip screen)
       screen)))
 
 (define (main-loop screen)
@@ -59,14 +57,11 @@
     (let ((event (sdl-make-event)))
       (iter event))))
 
+(printf "initializing\n")
+(init-sdl)
 
-(initialize-ns-app
- (lambda ()
-   (printf "initializing\n")
-   (init-sdl)
-   
-   (printf "creating screen\n")
-   (define screen (init-screen))
-   
-   (printf "beginning main loop\n")
-   (main-loop screen)))
+(printf "creating screen\n")
+(define screen (init-screen))
+
+(printf "beginning main loop\n")
+(main-loop screen)
