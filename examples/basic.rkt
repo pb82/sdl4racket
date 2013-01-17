@@ -34,6 +34,7 @@
 (define (main-loop screen)
   (define (iter event)
     (begin      
+      (printf "Waiting for next event\n")
       (sdl-wait-event (event 'POINTER))      
       
       (let ((type (event 'TYPE)))

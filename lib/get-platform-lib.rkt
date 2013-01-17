@@ -33,7 +33,7 @@
        #'(begin
            (log-debug "sdl: windows")
            (define-runtime-path sdl-library-path
-             (build-path "win64" "libSDL-1.2.so.0.11.4")))]
+             (build-path "win64" "SDL.dll")))]
 
       [(macosx)
        #'(begin
