@@ -1,0 +1,6 @@
+
+Must get http://www.libsdl.org/projects/SDL_image/
+
+Must figure out Mac OS X dynamic loading
+
+Must test Win32, Win64, Lin32, Lin64.
