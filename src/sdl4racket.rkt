@@ -98,12 +98,17 @@
 ;;
 ;; Experimental
 (define (load-bitmap path)
-  (let* ((bitmap (read-bitmap path))
-         (width (send bitmap get-width))
-         (height (send bitmap get-height))
-         (depth (send bitmap get-depth))
-         (size (* width height (/ depth 8)))
-         (surface (sdl-create-rgb-surface 
+  (bitmap->sdl-surface (read-bitmap path)))
+
+
+;; bitmap->sdl-surface: bitmap% -> sdl-surface
+;; Converts a bitmap from racket/draw into an sdl-surface.
+(define (bitmap->sdl-surface bitmap)
+  (define width (send bitmap get-width))
+  (define height (send bitmap get-height))
+  (define depth (send bitmap get-depth))
+  (define size (* width height (/ depth 8)))
+  (define surface (sdl-create-rgb-surface
                     '(SDL_SWSURFACE) 
                     width 
                     height 
@@ -112,12 +117,13 @@
                     (sdl-default-mask 'G)
                     (sdl-default-mask 'B)
                     (sdl-default-mask 'A)))
-         (pixels (sdl-surface-pixels surface))
-         (storage (make-sized-byte-string pixels size)))
-    (begin
-      (send bitmap get-argb-pixels 0 0 width height storage #f #t)
-      (argb->rgba! storage)
-      surface)))
+  (define pixels (sdl-surface-pixels surface))
+  (define storage (make-sized-byte-string pixels size))
+
+  (send bitmap get-argb-pixels 0 0 width height storage #f #t)
+  (argb->rgba! storage)
+  surface)
+
 ;; ---------------------------------------------------------------------
 
 
@@ -629,7 +635,7 @@
 (define-sdl SDL_UpperBlit 
   (_fun 
     _sdl-surface-pointer 
-    _sdl-rect-pointer 
+    _sdl-rect-pointer/null 
     _sdl-surface-pointer 
     _sdl-rect-pointer 
     -> (r : _int) 
