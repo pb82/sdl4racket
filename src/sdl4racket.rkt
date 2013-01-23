@@ -64,7 +64,7 @@
 (define *event-states*
   '((SDL_QUERY	         -1)
     (SDL_IGNORE	          0)
-    (SDL_DISABLE	        0)
+    (SDL_DISABLE	      0)
     (SDL_ENABLE	          1)))
 
 ;; Predefined error messages
@@ -155,7 +155,7 @@
       ;; If loading the library succeeded, replace the dummy function
       ;; with the actual SDL_image export.
       (set! img-load (lambda (path)
-      (IMG_Load (string->bytes/locale path))))))
+        (IMG_Load (string->bytes/locale path))))))
 ;; ---------------------------------------------------------------------
 
 
