@@ -43,8 +43,8 @@
                       screen
                       (sdl-make-rect (- current-x sprite-width/2)
                                      (- current-y sprite-height/2)
-                                     (+ current-x sprite-width/2)
-                                     (+ current-y sprite-height/2)))
+                                     sprite-width
+                                     sprite-height))
     (sdl-flip screen)
     (set! last-blit-time (sdl-get-ticks)))
 
