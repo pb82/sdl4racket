@@ -635,7 +635,7 @@
 (define-sdl SDL_UpperBlit 
   (_fun 
     _sdl-surface-pointer 
-    _sdl-rect-pointer 
+    _sdl-rect-pointer/null 
     _sdl-surface-pointer 
     _sdl-rect-pointer 
     -> (r : _int) 

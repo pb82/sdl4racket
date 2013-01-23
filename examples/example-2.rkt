@@ -39,7 +39,7 @@
   (define (blit! current-x current-y)
     (sdl-fill-rect screen (sdl-make-rect 0 0 640 480) #x00000000)
     (sdl-blit-surface sprite 
-                      (sdl-make-rect 0 0 sprite-width sprite-height) 
+                      #f
                       screen
                       (sdl-make-rect (- current-x sprite-width/2)
                                      (- current-y sprite-height/2)
