@@ -246,7 +246,7 @@
 ;; SDL_LoadFunction
 ;; SDL_UnloadObject
 ;; SDL_envvars
-;; SDL_VERISON
+;; SDL_VERSION
 ;; SDL_Linked_Version
 ;; SDL_version
 
