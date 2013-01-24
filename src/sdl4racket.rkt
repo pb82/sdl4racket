@@ -5,6 +5,7 @@
   ffi/unsafe/define
   ffi/cvector
   ffi/unsafe/cvector
+  racket/draw
   "structs.rkt"
   "../lib/get-platform-lib.rkt")
 
@@ -75,9 +76,59 @@
     (SDL_UNSUPPORTED      4)
     (SDL_LASTERROR        5)))
 
-;; libSDL and libSDL_image initialization
+;; Working with racket bitmap%
 ;; ---------------------------------------------------------------------
 
+;; found this conversion function in the
+;; RacketGL package of stephanh
+(define (argb->rgba! pixels)
+  (for ((i (in-range (/ (bytes-length pixels) 4))))
+       (let* ((offset (* 4 i))
+              (alpha (bytes-ref pixels offset))
+              (red (bytes-ref pixels (+ 1 offset)))
+              (green (bytes-ref pixels (+ 2 offset)))
+              (blue (bytes-ref pixels (+ 3 offset))))
+         (bytes-set! pixels offset (quotient (* alpha red) 255))
+         (bytes-set! pixels (+ 1 offset) (quotient (* alpha green) 255))
+         (bytes-set! pixels (+ 2 offset) (quotient (* alpha blue) 255))
+         (bytes-set! pixels (+ 3 offset) alpha))))
+
+;; Load images without SDL_image by using Racket bitmap%
+;; and converting it to SDL_Surface
+;;
+;; Experimental
+(define (load-bitmap path)
+  (bitmap->sdl-surface (read-bitmap path)))
+
+
+;; bitmap->sdl-surface: bitmap% -> sdl-surface
+;; Converts a bitmap from racket/draw into an sdl-surface.
+(define (bitmap->sdl-surface bitmap)
+  (define width (send bitmap get-width))
+  (define height (send bitmap get-height))
+  (define depth (send bitmap get-depth))
+  (define size (* width height (/ depth 8)))
+  (define surface (sdl-create-rgb-surface
+                    '(SDL_SWSURFACE) 
+                    width 
+                    height 
+                    depth
+                    (sdl-default-mask 'R)
+                    (sdl-default-mask 'G)
+                    (sdl-default-mask 'B)
+                    (sdl-default-mask 'A)))
+  (define pixels (sdl-surface-pixels surface))
+  (define storage (make-sized-byte-string pixels size))
+
+  (send bitmap get-argb-pixels 0 0 width height storage #f #t)
+  (argb->rgba! storage)
+  surface)
+
+;; ---------------------------------------------------------------------
+
+
+;; libSDL and libSDL_image initialization
+;; ---------------------------------------------------------------------
 
 (define (sdl-image-get-lib)
   (let ((type (system-type 'os)))
@@ -584,7 +635,7 @@
 (define-sdl SDL_UpperBlit 
   (_fun 
     _sdl-surface-pointer 
-    _sdl-rect-pointer 
+    _sdl-rect-pointer/null 
     _sdl-surface-pointer 
     _sdl-rect-pointer 
     -> (r : _int) 
