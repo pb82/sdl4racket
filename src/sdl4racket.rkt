@@ -5,7 +5,6 @@
   ffi/unsafe/define
   ffi/cvector
   ffi/unsafe/cvector
-  racket/draw
   "structs.rkt"
   "../lib/get-platform-lib.rkt")
 
@@ -93,14 +92,6 @@
          (bytes-set! pixels (+ 2 offset) (quotient (* alpha blue) 255))
          (bytes-set! pixels (+ 3 offset) alpha))))
 
-;; Load images without SDL_image by using Racket bitmap%
-;; and converting it to SDL_Surface
-;;
-;; Experimental
-(define (load-bitmap path)
-  (bitmap->sdl-surface (read-bitmap path)))
-
-
 ;; bitmap->sdl-surface: bitmap% -> sdl-surface
 ;; Converts a bitmap from racket/draw into an sdl-surface.
 (define (bitmap->sdl-surface bitmap)
@@ -125,7 +116,6 @@
   surface)
 
 ;; ---------------------------------------------------------------------
-
 
 ;; libSDL and libSDL_image initialization
 ;; ---------------------------------------------------------------------
@@ -194,7 +184,6 @@
     'BIG
     'LITTLE))
 
-
 ;; Just to have a uniform API. All sdl related functions should start
 ;; with sdl-... This includes also structure creation.
 (define sdl-make-rect   make-sdl-rect)
@@ -214,7 +203,6 @@
           ((eqv? type 'B) #x00FF0000)
           ((eqv? type 'A) #xFF000000)
           (else (error "Not a valid mask descriptor: " type)))))
-
 
 ;; SDL initialization and cleanup functions
 ;; ---------------------------------------------------------------------
@@ -447,35 +435,34 @@
 (define-sdl SDL_GetRGB 
   (_fun _uint32 _sdl-pixel-format-pointer _pointer _pointer _pointer
     -> _void))
-    
-(define (sdl-get-rgb pixel pixel-format r g b)
-  (let ((_r (malloc (ctype-sizeof _uint8)))
-        (_g (malloc (ctype-sizeof _uint8)))
-        (_b (malloc (ctype-sizeof _uint8))))
-    (begin
-      (SDL_GetRGB pixel pixel-format _r _g _b)
-      (list
-        (ptr-ref _r _uint8)
-        (ptr-ref _g _uint8)
-        (ptr-ref _b _uint8)))))
 
+(define (sdl-get-rgb pixel pixel-format)
+    (let ((storage (make-cvector _uint8 3)))
+        (begin
+            (SDL_GetRGB 
+                pixel 
+                pixel-format
+                (ptr-add (cvector-ptr storage) 0 _uint8)
+                (ptr-add (cvector-ptr storage) 1 _uint8)
+                (ptr-add (cvector-ptr storage) 2 _uint8))
+            (cvector->list storage))))
+            
 ;; sdl-get-rgba
 (define-sdl SDL_GetRGBA
   (_fun _uint32 _sdl-pixel-format-pointer _pointer _pointer _pointer _pointer
     -> _void))
     
-(define (sdl-get-rgba pixel pixel-format r g b a)
-  (let ((_r (malloc (ctype-sizeof _uint8)))
-        (_g (malloc (ctype-sizeof _uint8)))
-        (_b (malloc (ctype-sizeof _uint8)))
-        (_a (malloc (ctype-sizeof _uint8))))        
-    (begin
-      (SDL_GetRGBA pixel pixel-format _r _g _b _a)
-      (list
-        (ptr-ref _r _uint8)
-        (ptr-ref _g _uint8)
-        (ptr-ref _b _uint8)
-        (ptr-ref _a _uint8)))))
+(define (sdl-get-rgba pixel pixel-format)
+    (let ((storage (make-cvector _uint8 4)))
+        (begin
+            (SDL_GetRGBA
+                pixel 
+                pixel-format
+                (ptr-add (cvector-ptr storage) 0 _uint8)
+                (ptr-add (cvector-ptr storage) 1 _uint8)
+                (ptr-add (cvector-ptr storage) 2 _uint8)
+                (ptr-add (cvector-ptr storage) 3 _uint8))                
+            (cvector->list storage))))
 
 ;; sdl-create-rgb-surface
 (define-sdl SDL_CreateRGBSurface 
@@ -870,12 +857,11 @@
     -> (assert (= r 0) r 'sdl-joystick-get-ball)))
     
 (define (sdl-joystick-get-ball joystick ball)
-  (let* ((dx (malloc (ctype-sizeof _int)))
-         (dy (malloc (ctype-sizeof _int)))
-         (r  (SDL_JoystickGetBall joystick ball dx dy)))
-      (list        
-        (ptr-ref dx _int)
-        (ptr-ref dy _int))))
+    (let* ((storage (make-cvector _int 2))
+           (dx (cvector-ptr storage))
+           (dy (ptr-add (cvector-ptr storage) 1 _int))
+           (r (SDL_JoystickGetBall joystick ball dx dy)))
+        (cvector->list storage)))
 
 ;; sdl-joystick-close
 (define-sdl SDL_JoystickClose
@@ -1052,7 +1038,7 @@
 ;; This function returns  a list that must be indexed with the values
 ;; of the _sdl-key enum. Make this enum accessible to the user.
 (define (sdl-get-key-state)
-  (let* ((numkeys (malloc (ctype-sizeof _int)))
+  (let* ((numkeys (malloc (ctype-sizeof _int) 'atomic))
          (result  (SDL_GetKeyState numkeys))
          (length  (ptr-ref numkeys _int))
          (vector  (make-cvector* result _uint8 length)))
@@ -1102,14 +1088,13 @@
     -> _uint8))
     
 (define (sdl-get-mouse-state)
-  (let* ((x (malloc (ctype-sizeof _int)))
-         (y (malloc (ctype-sizeof _int)))
-         (r (SDL_GetMouseState x y)))
+  (let* ((s (malloc (* (ctype-sizeof _int) 2) 'atomic))
+         (r (SDL_GetMouseState s (ptr-add s 1 _int))))
     (begin
       (list
         r
-        (ptr-ref x _int)
-        (ptr-ref y _int)))))
+        (ptr-ref s _int 0)
+        (ptr-ref s _int 1)))))
 
 ;; sdl-get-relative-mouse-state
 (define-sdl SDL_GetRelativeMouseState
@@ -1117,14 +1102,13 @@
     -> _uint8))
     
 (define (sdl-get-relative-mouse-state)
-  (let* ((x (malloc (ctype-sizeof _int)))
-         (y (malloc (ctype-sizeof _int)))
-         (r (SDL_GetRelativeMouseState x y)))
+  (let* ((s (malloc (* (ctype-sizeof _int) 2) 'atomic))
+         (r (SDL_GetRelativeMouseState s (ptr-add s 1 _int))))
     (begin
       (list
         r
-        (ptr-ref x _int)
-        (ptr-ref y _int)))))
+        (ptr-ref s _int 0)
+        (ptr-ref s _int 1)))))
 
 ;; sdl-get-app-state
 (define-sdl SDL_GetAppState
@@ -1267,7 +1251,7 @@
       (else         (handle-msg-error msg)))))
 
 (define (sdl-make-event)
-  (let ((event (malloc 128)))
+  (let ((event (malloc 128 'atomic)))
     (begin
       (cpointer-push-tag! event sdl-event-tag)
       (lambda (msg)

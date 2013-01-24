@@ -1,7 +1,9 @@
 #!/usr/bin/env racket
 #lang racket
 
-(require "../src/sdl4racket.rkt")
+(require 
+    racket/draw
+    "../src/sdl4racket.rkt")
 
 ;; Demonstrates initialization, surfaces and simple event handling.
 ;; ---------------------------------------------------------------------
@@ -22,7 +24,7 @@
 (define (init-screen)
   (let
     ((screen (sdl-set-video-mode 640 480 32 '(SDL_SWSURFACE SDL_DOUBLEBUF)))
-     (logo   (sdl-display-format (load-bitmap "logo.png")))
+     (logo   (sdl-display-format (bitmap->sdl-surface (read-bitmap "logo.png"))))
      (srect  (sdl-make-rect 0 0 320 240))
      (drect  (sdl-make-rect 160 120 320 240)))
           
@@ -36,7 +38,7 @@
     (begin      
       (printf "Waiting for next event\n")
       (sdl-wait-event (event 'POINTER))      
-      
+
       (let ((type (event 'TYPE)))
         (case type
         
