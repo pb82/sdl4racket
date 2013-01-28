@@ -78,20 +78,6 @@
 ;; Working with racket bitmap%
 ;; ---------------------------------------------------------------------
 
-;; found this conversion function in the
-;; RacketGL package of stephanh
-(define (argb->rgba! pixels)
-  (for ((i (in-range (/ (bytes-length pixels) 4))))
-       (let* ((offset (* 4 i))
-              (alpha (bytes-ref pixels offset))
-              (red (bytes-ref pixels (+ 1 offset)))
-              (green (bytes-ref pixels (+ 2 offset)))
-              (blue (bytes-ref pixels (+ 3 offset))))
-         (bytes-set! pixels offset (quotient (* alpha red) 255))
-         (bytes-set! pixels (+ 1 offset) (quotient (* alpha green) 255))
-         (bytes-set! pixels (+ 2 offset) (quotient (* alpha blue) 255))
-         (bytes-set! pixels (+ 3 offset) alpha))))
-
 ;; bitmap->sdl-surface: bitmap% -> sdl-surface
 ;; Converts a bitmap from racket/draw into an sdl-surface.
 (define (bitmap->sdl-surface bitmap)
@@ -99,20 +85,30 @@
   (define height (send bitmap get-height))
   (define depth (send bitmap get-depth))
   (define size (* width height (/ depth 8)))
+  ;; The pixel data in a bitmap% object is retrieved in ARGB format.
+  ;; SDL surfaces store pixel data in RGBA format. To create a surface
+  ;; from ARGB pixel we have to map the bytes. This can be done by  
+  ;; providing a appropriate mask to the sdl-create-rgb-surface
+  ;; function. The mask tells the function in which bytes to values
+  ;; for R,G,B and A are stored.
+  ;;
+  ;; To map from ARGB to RGBA we do the following:
+  ;; R is stored in the 2nd byte -> G
+  ;; G is stored in the 3rd byte -> B
+  ;; B is stored in the 4th byte -> A
+  ;; A is stored in the 1st byte -> R
   (define surface (sdl-create-rgb-surface
                     '(SDL_SWSURFACE) 
                     width 
                     height 
                     depth
-                    (sdl-default-mask 'R)
                     (sdl-default-mask 'G)
                     (sdl-default-mask 'B)
-                    (sdl-default-mask 'A)))
+                    (sdl-default-mask 'A)
+                    (sdl-default-mask 'R)))
   (define pixels (sdl-surface-pixels surface))
   (define storage (make-sized-byte-string pixels size))
-
   (send bitmap get-argb-pixels 0 0 width height storage #f #t)
-  (argb->rgba! storage)
   surface)
 
 ;; ---------------------------------------------------------------------
