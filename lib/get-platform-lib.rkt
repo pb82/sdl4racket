@@ -28,6 +28,11 @@
              (log-debug "sdl: linux32")
 	     (define-runtime-path sdl-library-path
 	       (build-path "linux32" "libSDL-1.2.so.0.11.4")))]
+	["ppc-linux"
+	 #'(begin
+             (log-debug "sdl: linuxppc32")
+	     (define-runtime-path sdl-library-path
+	       (build-path "linuxppc32" "libSDL-1.2.so.0.11.3")))]
         ["win32\\x86_64"
          #'(begin
              (log-debug "sdl: windows 64 bit")
