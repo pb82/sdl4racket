@@ -50,7 +50,7 @@
    (SDL_PREALLOC          #x01000000)))
 
 ;; SDL_GrabMode
-(define SDL_GRAB_QUERY    -1)
+(define SDL_GRAB_QUERY   -1)
 (define SDL_GRAB_OFF      0)
 (define SDL_GRAB_ON       1)
 
@@ -61,10 +61,10 @@
 
 ;; Event states. For use with sdl-event-state
 (define *event-states*
-  '((SDL_QUERY	         -1)
-    (SDL_IGNORE	          0)
-    (SDL_DISABLE	      0)
-    (SDL_ENABLE	          1)))
+  '((SDL_QUERY	        -1)
+    (SDL_IGNORE	         0)
+    (SDL_DISABLE	         0)
+    (SDL_ENABLE	         1)))
 
 ;; Predefined error messages
 (define *sdl-error*
@@ -729,6 +729,18 @@
     
 (define sdl-delay SDL_Delay)
 
+;; sdl-add-timer
+
+;; (define-sdl SDL_AddTimer
+;;    (_fun _uint32 _pointer _pointer
+;;        -> _uint32))
+
+;; (define (sdl-add-timer interval callback)
+;;    (SDL_AddTimer 
+;;        interval 
+;;        (function-ptr callback (_fun _uint32 _pointer -> _uint32))
+;;        #f))
+
 ;; TODO:
 ;; MISSING:
 ;; SDL_AddTimer
@@ -961,7 +973,34 @@
 ;; SDL Audio
 ;; ---------------------------------------------------------------------
 
-(define sdl-make-audio-spec make-SDL_AudioSpec)
+(define sdl-make-audio-spec make-sdl-audio-spec)
+
+;; sdl-open-audio
+(define-sdl SDL_OpenAudio
+    (_fun _sdl-audio-spec-pointer _sdl-audio-spec-pointer
+        -> (r : _int)
+        -> (assert (= r 0) r 'sdl-open-audio)))
+
+(define sdl-open-audio SDL_OpenAudio)
+
+;; sdl-pause-audio
+(define-sdl SDL_PauseAudio
+    (_fun _int
+        -> _void))
+        
+(define (sdl-pause-audio pause-on)
+    (SDL_PauseAudio pause-on))
+
+;; sdl-get-audio-status
+(define-sdl SDL_GetAudioStatus
+    (_fun 
+        -> _SDL_audiostatus))
+
+(define sdl-get-audio-status SDL_GetAudioStatus)
+
+;; TODO:
+;; MISSING:
+;; 
 
 ;; ---------------------------------------------------------------------
 

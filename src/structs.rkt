@@ -484,7 +484,13 @@
 ;; SDL Audio
 ;; ---------------------------------------------------------------------
 
-(define-cstruct _SDL_AudioSpec
+(define _SDL_audiostatus
+  (_enum
+    '(SDL_AUDIO_STOPPED = 0
+      SDL_AUDIO_PLAYING
+      SDL_AUDIO_PAUSED)))
+
+(define-cstruct _sdl-audio-spec
       ((freq _int)
        (format _uint16)
        (channels _uint8)

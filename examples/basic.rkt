@@ -19,7 +19,7 @@
 (define global-state (app-state #f))
 ;; ---------------------------------------------------------------------
 
-(define (init-sdl) (sdl-init '(SDL_INIT_VIDEO)))
+(define (init-sdl) (sdl-init '(SDL_INIT_VIDEO SDL_INIT_TIMER)))
 
 (define (init-screen)
   (let
