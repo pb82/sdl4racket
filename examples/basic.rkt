@@ -37,13 +37,13 @@
   (define (iter event)
     (begin      
       (printf "Waiting for next event\n")
-      (sdl-wait-event (event 'POINTER))      
+      (sdl-wait-event (event 'POINTER))
 
       (let ((type (event 'TYPE)))
         (case type
         
           ((SDL_QUIT) ((global-state 'SET) #t))            
-          
+                    
           ((SDL_MOUSEMOTION)
             (printf "x: ~a y: ~a \n" 
               ((event 'EVENT) 'X) 

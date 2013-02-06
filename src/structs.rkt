@@ -453,6 +453,27 @@
 ;; ---------------------------------------------------------------------
 
 
+;; SDL Timer
+;; ---------------------------------------------------------------------
+
+(define SDL_TimerCallback
+    (_fun #:async-apply (lambda (x) (x)) 
+        _uint32 -> _uint32))
+
+(define SDL_NewTimerCallback
+    (_fun #:async-apply (lambda (x) (x)) 
+        _uint32 _pointer -> _uint32))
+
+(define-cstruct _SDL_TimerId
+    ((interval _uint32)
+     (cb SDL_NewTimerCallback)
+     (param _pointer)
+     (last_alarm _uint32)
+     (next _SDL_TimerId-pointer)))
+
+;; ---------------------------------------------------------------------
+
+
 ;; SDL CD-ROM
 ;; ---------------------------------------------------------------------
 

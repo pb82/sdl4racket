@@ -730,22 +730,30 @@
 (define sdl-delay SDL_Delay)
 
 ;; sdl-add-timer
+(define-sdl SDL_AddTimer
+    (_fun _uint32 SDL_NewTimerCallback _pointer
+        -> _SDL_TimerId-pointer))
 
-;; (define-sdl SDL_AddTimer
-;;    (_fun _uint32 _pointer _pointer
-;;        -> _uint32))
+(define (sdl-add-timer interval callback data)
+    (SDL_AddTimer 
+        interval 
+        callback
+        data))
 
-;; (define (sdl-add-timer interval callback)
-;;    (SDL_AddTimer 
-;;        interval 
-;;        (function-ptr callback (_fun _uint32 _pointer -> _uint32))
-;;        #f))
+;; sdl-stop-timer
+(define-sdl SDL_RemoveTimer
+    (_fun _SDL_TimerId-pointer -> _void))
+    
+(define (sdl-remove-timer timer-id)
+    (SDL_RemoveTimer timer-id))
 
-;; TODO:
-;; MISSING:
-;; SDL_AddTimer
-;; SDL_RemoveTimer
-;; SDL_SetTimer
+;; sdl-set-timer
+(define-sdl SDL_SetTimer
+    (_fun _uint32 SDL_TimerCallback
+        -> _int))
+
+(define (sdl-set-timer interval callback)
+    (SDL_SetTimer interval callback))
 
 ;; ---------------------------------------------------------------------
 
@@ -1020,7 +1028,7 @@
 (define-sdl SDL_PeepEvents 
   (_fun _pointer _int _uint8 _uint32 
     -> (r : _int)
-    -> (assert (>= r 0) r 'sdl-wait-events)))
+    -> (assert (>= r 0) r 'sdl-peep-events)))
     
 (define (sdl-peep-events events action mask)
   (let ((pointers 
@@ -1046,10 +1054,35 @@
   (_fun _sdl-event-pointer 
     -> (r : _int) 
     -> (assert (= 1 r) r 'sdl-wait-events)))
-    
-(define (sdl-wait-event event)
+
+(define (sdl-wait-event-native event)
   (SDL_WaitEvent event))
 
+
+;; The native implementation will block the current thread. This is ok
+;; and intended but can lead to problems with timers. A timer may invoke
+;; it's callback in a thread unknown to the Raket VM wile the callback
+;; itself is a Scheme function that must be executed in Racket's main
+;; thread. We can use #:async-apply to circumvent this: The callback
+;; is not executed in the foreign thread, but a thunk (containig the
+;; callback) is returned. This thunk then can be executed in the right
+;; (main) thread.
+;;
+;; However, this means that when the main thread is blocking, all the
+;; timers (and possibly more) are suspended as well which is not
+;; desirable.
+;;
+;; The solution: don't let the main thread block.
+(define (sdl-wait-event event)
+  (let loop ()
+    (sdl-pump-events)
+    (let ((p (SDL_PeepEvents event 1 SDL_GETEVENT SDL_ALLEVENTS)))
+      (cond
+        ((= p 0) (begin
+                   (sdl-delay 10)
+                   (loop)))
+        ((= p 1) p)))))
+        
 ;; TODO:
 ;; MISSING:
 ;; SDL_PushEvent
