@@ -1,7 +1,7 @@
 #!/usr/bin/env racket
 #lang racket
 
-(require "../src/sdl4racket.rkt"
+(require "../src/sdl.rkt"
          racket/fixnum
          images/logos)
 
