@@ -1,3 +1,5 @@
+Must rewrite events so that users can create individual events and
+push them onto the queue (sdl-push-event)
 
 Must get http://www.libsdl.org/projects/SDL_image/
 

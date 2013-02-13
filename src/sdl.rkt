@@ -1046,10 +1046,16 @@
                    (SDL_Delay 10)
                    (loop)))
         ((= p 1) p)))))
+
+;; sdl-push-event
+(define-sdl SDL_PushEvent
+    (_fun _sdl-event-pointer
+        -> _int))
+        
+(define sdl-push-event SDL_PushEvent)
         
 ;; TODO:
 ;; MISSING:
-;; SDL_PushEvent
 ;; SDL_GetEventFilter
 ;; SDL_SetEventFilter
 
