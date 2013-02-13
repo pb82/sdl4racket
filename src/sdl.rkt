@@ -993,17 +993,17 @@
   (_fun _pointer _int _uint8 _uint32 
     -> (r : _int)
     -> (assert (>= r 0) r 'sdl-peep-events)))
-    
-(define (sdl-peep-events events action mask)
-  (let ((pointers 
-          (list->cvector 
-            (map (lambda (event) (event 'POINTER)) events) _pointer)))
-      
+
+;; Currently the implementation of sdl-peep-events does not
+;; accept an array of event(pointers). The C implementation 
+;; requires a pointer that points to a contigous  block in 
+;; memory where a number of event structures are stored.
+(define (sdl-peep-events event action mask)
     (SDL_PeepEvents 
-      (cvector-ptr pointers) 
-      (length events) 
+        event
+      1
       action 
-      mask)))
+      mask))
       
 ;; sdl-poll-event
 (define-sdl SDL_PollEvent 
