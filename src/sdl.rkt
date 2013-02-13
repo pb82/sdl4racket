@@ -1054,10 +1054,19 @@
         
 (define sdl-push-event SDL_PushEvent)
         
-;; TODO:
-;; MISSING:
-;; SDL_GetEventFilter
-;; SDL_SetEventFilter
+;; sdl-set-event-filter
+(define-sdl SDL_SetEventFilter
+    (_fun SDL_EventFilter
+        -> _void))
+        
+(define sdl-set-event-filter SDL_SetEventFilter)
+
+;; sdl-get-event-filter
+(define-sdl SDL_GetEventFilter
+    (_fun
+        -> SDL_EventFilter))
+        
+(define sdl-get-event-filter SDL_GetEventFilter)
 
 ;; sdl-event-state
 (define-sdl SDL_EventState

@@ -441,6 +441,11 @@
 
 (define-cstruct _sdl-event
   ((type _sdl-event-type)))
+  
+(define SDL_EventFilter
+    (_fun _sdl-event-pointer/null
+        -> _int))
+  
 ;; ---------------------------------------------------------------------
 
 
