@@ -8,7 +8,7 @@
   "structs.rkt"
   "../lib/get-platform-lib.rkt")
 
-(provide (all-defined-out))
+(provide (except-out (all-defined-out)))
 (provide (struct-out sdl-surface))
 (provide (struct-out sdl-rect))
 (provide (struct-out sdl-color))
@@ -168,7 +168,6 @@
 ;; ---------------------------------------------------------------------
 
 ;; sdl-init
-
 (define-sdl SDL_Init 
   (_fun _uint32 
     -> (r : _int) 
@@ -1297,7 +1296,7 @@
       ((TYPE)       type)
       (else         (handle-msg-error msg)))))
 
-(define (sdl-make-event)
+(define (make-event)
   (let ((event (malloc 128 'atomic)))
     (begin
       (cpointer-push-tag! event sdl-event-tag)
@@ -1322,3 +1321,13 @@
               ((SDL_VIDEOEXPOSE)      (sdl-expose-constructor             'SDL_VIDEOEXPOSE))
               ((SDL_QUIT)             (sdl-quit-constructor               'SDL_QUIT))
               (else                   (error "Unkown event type:" msg)))))))))
+              
+(define sdl-make-event
+  (case-lambda
+    (()
+      ;; No Arguments
+      (make-event))
+      
+      ;; Create event of given type
+    ((type)
+      (printf "create ~a event" type))))
