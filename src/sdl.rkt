@@ -8,7 +8,7 @@
   "structs.rkt"
   "../lib/get-platform-lib.rkt")
 
-(provide (except-out (all-defined-out)))
+(provide (except-out (all-defined-out) make-event))
 (provide (struct-out sdl-surface))
 (provide (struct-out sdl-rect))
 (provide (struct-out sdl-color))
@@ -1296,6 +1296,15 @@
       ((TYPE)       type)
       (else         (handle-msg-error msg)))))
 
+(define (sdl-user-constructor raw-pointer type)
+  (let ((event (ptr-ref raw-pointer _sdl-user-event)))
+    (lambda (msg)
+      (case msg
+        ((TYPE)     type)
+        ((CODE)     (sdl-user-event-code            event))
+        ((SET_CODE) (lambda (code) (set-sdl-user-event-code! event code)))
+        (else       (handle-msg-error msg))))))
+
 (define (make-event)
   (let ((event (malloc 128 'atomic)))
     (begin
@@ -1318,6 +1327,7 @@
               ((SDL_JOYBUTTONDOWN)    (sdl-joy-button-constructor   event 'SDL_JOYBUTTONDOWN))
               ((SDL_JOYBUTTONUP)      (sdl-joy-button-constructor   event 'SDL_JOYBUTTONUP))
               ((SDL_VIDEORESIZE)      (sdl-resize-constructor       event 'SDL_VIDEORESIZE))
+              ((SDL_USEREVENT)        (sdl-user-constructor         event 'SDL_USEREVENT))
               ((SDL_VIDEOEXPOSE)      (sdl-expose-constructor             'SDL_VIDEOEXPOSE))
               ((SDL_QUIT)             (sdl-quit-constructor               'SDL_QUIT))
               (else                   (error "Unkown event type:" msg)))))))))
@@ -1330,4 +1340,7 @@
       
       ;; Create event of given type
     ((type)
-      (printf "create ~a event" type))))
+      (let* ((event (make-event))
+             (refer (ptr-ref (event 'POINTER) _sdl-event)))
+        (set-sdl-event-type! refer type)
+        event))))
