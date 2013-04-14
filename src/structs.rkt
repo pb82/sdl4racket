@@ -526,4 +526,17 @@
        (callback (_fun _pointer _pointer _int -> _void))
        (userdata _pointer)))
 
+(define-cstruct _SDL_AudioCVT
+  ((needed _int)
+   (src_format _uint16)
+   (dest_format _uint16)
+   (rate_incr _double)
+   (buf _pointer)
+   (len _int)
+   (len_cvt _int)
+   (len_mult _int)
+   (len_ratio _double)
+   (filters (_array (_fun _SDL_AudioCVT-pointer _uint16 -> _void) 10))
+   (filter_index _int)))
+
 ;; ---------------------------------------------------------------------
