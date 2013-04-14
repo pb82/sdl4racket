@@ -462,11 +462,11 @@
 ;; ---------------------------------------------------------------------
 
 (define SDL_TimerCallback
-    (_fun #:async-apply (lambda (x) (x)) 
+    (_fun #:async-apply (lambda (f) (f)) 
         _uint32 -> _uint32))
 
 (define SDL_NewTimerCallback
-    (_fun #:async-apply (lambda (x) (x)) 
+    (_fun #:async-apply (lambda (f) (f)) 
         _uint32 _pointer -> _uint32))
 
 (define-cstruct _SDL_TimerId
@@ -517,14 +517,14 @@
       SDL_AUDIO_PAUSED)))
 
 (define-cstruct _sdl-audio-spec
-      ((freq _int)
-       (format _uint16)
-       (channels _uint8)
-       (silence _uint8)
-       (samples _uint16)
-       (size _uint32)
-       (callback (_fun _pointer _pointer _int -> _void))
-       (userdata _pointer)))
+  ((freq _int)
+   (format _uint16)
+   (channels _uint8)
+   (silence _uint8)
+   (samples _uint16)
+   (size _uint32)
+   (callback (_fun _pointer _pointer _int -> _void))
+   (userdata _pointer)))
 
 (define-cstruct _SDL_AudioCVT
   ((needed _int)
