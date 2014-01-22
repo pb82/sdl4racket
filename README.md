@@ -29,7 +29,7 @@ The main C event structure is actually a union. In sdl4racket a call to
 will return the correct event closure, according to the current event type.
 
 
-This binding is not complete, however a reasonable part of SDL_Video
+This binding is not complete, however most of SDL_Video
 and the event handling is already working.
 
 
