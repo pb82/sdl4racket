@@ -299,12 +299,14 @@
 (define (sdl-update-rects screen rects)
   (define (iter item list)
     (if (null? list)
-      (SDL_UpdateRect screen 
-        (sdl-rect-x item) 
-        (sdl-rect-y item) 
-        (sdl-rect-w item) 
-        (sdl-rect-h item))
-      (iter (car list) (cdr list))))
+      #f
+      (begin
+        (SDL_UpdateRect screen 
+          (sdl-rect-x item) 
+          (sdl-rect-y item) 
+          (sdl-rect-w item) 
+          (sdl-rect-h item))
+      (iter (car list) (cdr list)))))
   (iter (car rects) (cdr rects)))
         
 ;; sdl-set-colors
